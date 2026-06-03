@@ -1,16 +1,24 @@
-import { getCurrentUser } from "@/infrastructure/supabase/auth-session";
+import { requireAuth } from "@/infrastructure/supabase/auth-session";
+import { AccountNotice } from "@/presentation/components/account/account-notice";
 
-export default async function MiCuentaPage() {
-  const session = await getCurrentUser();
-
-  if (!session) {
-    return null;
-  }
+export default async function MiCuentaPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ error?: string | string[] }>;
+}) {
+  const session = await requireAuth();
+  const params = searchParams ? await searchParams : {};
+  const raw = params.error;
+  const errorKey = Array.isArray(raw) ? raw[0] : raw;
 
   const { user, profile } = session;
 
   return (
     <div className="space-y-8">
+      {errorKey === "no_admin" ? (
+        <AccountNotice message="El panel de administración solo está disponible para cuentas con rol administrador. Si necesitas acceso, contacta al dueño de la tienda." />
+      ) : null}
+
       <div>
         <p className="text-xs font-black uppercase tracking-[0.25em] text-[var(--mks-pink)]">
           Tu espacio

@@ -5,7 +5,7 @@ import { cache } from "react";
 import { redirect } from "next/navigation";
 
 import type { UserRole } from "@/core/value-objects/user-role";
-import { isStaffRole } from "@/core/value-objects/user-role";
+import { isAdminRole, isStaffRole } from "@/core/value-objects/user-role";
 
 import { createSupabaseServerClient } from "./server";
 
@@ -73,7 +73,7 @@ export async function requireAuth(nextAfterLogin = "/mi-cuenta"): Promise<Curren
   return session;
 }
 
-/** Solo `admin` o `employee` activos; resto → home. */
+/** Solo `admin` o `employee` activos; resto → login. */
 export async function requireStaff(): Promise<CurrentSession> {
   const session = await requireAuth("/dashboard");
   if (!isStaffRole(session.profile.role)) {
@@ -81,6 +81,21 @@ export async function requireStaff(): Promise<CurrentSession> {
   }
   if (!session.profile.is_active) {
     redirect("/login?error=cuenta_inactiva");
+  }
+  return session;
+}
+
+/**
+ * Solo administradores activos (panel `/dashboard` y rutas hermanas).
+ * Clientes u empleados autenticados → `/mi-cuenta` con aviso (no filtrar solo por UI: alinear RLS con `is_admin()`).
+ */
+export async function requireAdmin(): Promise<CurrentSession> {
+  const session = await requireAuth("/dashboard");
+  if (!session.profile.is_active) {
+    redirect("/login?error=cuenta_inactiva");
+  }
+  if (!isAdminRole(session.profile.role)) {
+    redirect("/mi-cuenta?error=no_admin");
   }
   return session;
 }

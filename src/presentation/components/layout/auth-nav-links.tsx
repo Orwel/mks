@@ -14,8 +14,10 @@ export function AuthNavLinks() {
 
   useEffect(() => {
     if (!isBrowserSupabaseConfigured()) {
-      setReady(true);
-      setLoggedIn(false);
+      queueMicrotask(() => {
+        setReady(true);
+        setLoggedIn(false);
+      });
       return;
     }
 

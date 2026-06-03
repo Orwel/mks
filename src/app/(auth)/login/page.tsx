@@ -13,7 +13,8 @@ export default function LoginPage() {
           Iniciar sesión
         </h1>
         <p className="mt-2 text-sm font-medium text-neutral-600">
-          Accede a tu cuenta o al panel del equipo MKS.
+          Accedé a tu cuenta. El panel de administración de la tienda es solo para cuentas con rol
+          administrador.
         </p>
       </div>
       <LoginForm />

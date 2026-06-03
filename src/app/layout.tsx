@@ -20,6 +20,7 @@ const fontSans = DM_Sans({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(siteConfig.url),
   title: {
     default: siteConfig.name,
     template: `%s | ${siteConfig.shortName}`,
@@ -28,7 +29,8 @@ export const metadata: Metadata = {
   /** Favicon de marca: `public/brand/favicon.png` → `/brand/favicon.png` */
   icons: {
     icon: [{ url: brandAssets.favicon, type: "image/png" }],
-    apple: [{ url: brandAssets.favicon, sizes: "180x180" }],
+    shortcut: brandAssets.favicon,
+    apple: [{ url: brandAssets.favicon, sizes: "180x180", type: "image/png" }],
   },
 };
 

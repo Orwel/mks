@@ -1,14 +1,24 @@
 import type { NextConfig } from "next";
 
+import { imageRemotePatterns } from "./src/shared/constants/next-image-remotes";
+
 const nextConfig: NextConfig = {
-  images: {
-    remotePatterns: [
+  experimental: {
+    serverActions: {
+      bodySizeLimit: "15mb",
+    },
+  },
+  async redirects() {
+    return [
       {
-        protocol: "https",
-        hostname: "*.supabase.co",
-        pathname: "/storage/v1/object/public/**",
+        source: "/favicon.ico",
+        destination: "/brand/favicon.png",
+        permanent: false,
       },
-    ],
+    ];
+  },
+  images: {
+    remotePatterns: imageRemotePatterns,
   },
 };
 

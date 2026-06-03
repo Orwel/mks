@@ -1,17 +1,21 @@
-import { requireStaff } from "@/infrastructure/supabase/auth-session";
-import { DashboardTopBar } from "@/presentation/components/layout/dashboard-top-bar";
+import { requireAdmin } from "@/infrastructure/supabase/auth-session";
+import { DashboardSidebar } from "@/presentation/components/layout/dashboard-sidebar";
 
 export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const session = await requireStaff();
+  await requireAdmin();
 
   return (
     <div className="min-h-screen bg-[var(--mks-cream)]">
-      <DashboardTopBar showUsersLink={session.profile.role === "admin"} />
-      <div className="mx-auto max-w-6xl px-4 py-10 md:px-6">{children}</div>
+      <div className="flex min-h-screen flex-col md:flex-row">
+        <DashboardSidebar />
+        <div className="min-w-0 flex-1">
+          <div className="mx-auto max-w-6xl px-4 py-8 md:px-6 md:py-10">{children}</div>
+        </div>
+      </div>
     </div>
   );
 }

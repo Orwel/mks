@@ -5,3 +5,7 @@ export type UserRole = (typeof USER_ROLES)[number];
 export function isStaffRole(role: UserRole): boolean {
   return role === "admin" || role === "employee";
 }
+
+export function isAdminRole(role: UserRole): boolean {
+  return role === "admin";
+}

@@ -1,6 +1,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 
-Deno.serve((_req: Request) => {
+Deno.serve((req: Request) => {
+  void req;
   return new Response(
     JSON.stringify({
       message:

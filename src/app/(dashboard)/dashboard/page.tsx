@@ -1,44 +1,39 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
 
 import { buttonVariants } from "@/components/ui/button";
-import { getCurrentUser } from "@/infrastructure/supabase/auth-session";
+import { requireAdmin } from "@/infrastructure/supabase/auth-session";
 import { cn } from "@/lib/utils";
+import { DashboardPageHeader } from "@/presentation/components/layout/dashboard-page-header";
+
+const QUICK_LINKS = [
+  { href: "/productos", title: "Productos", desc: "CRUD e imágenes (Storage)" },
+  { href: "/categorias", title: "Categorías", desc: "Árbol y visibilidad" },
+  { href: "/pedidos", title: "Pedidos", desc: "Estados y seguimiento" },
+  { href: "/destacados", title: "Destacados", desc: "Carrusel del hero en la portada" },
+  { href: "/ticker", title: "Ticker", desc: "Mensajes rotativos" },
+  { href: "/anuncios", title: "Anuncios pop-up", desc: "Modales al ingresar al sitio" },
+  { href: "/legal", title: "Legal", desc: "Versiones y publicación" },
+  { href: "/usuarios", title: "Usuarios", desc: "Roles (solo admin en RLS)" },
+] as const;
 
 export default async function DashboardHomePage() {
-  const session = await getCurrentUser();
-  if (!session) {
-    redirect("/login");
-  }
+  const session = await requireAdmin();
 
   return (
-    <div className="space-y-8">
-      <div>
-        <p className="text-xs font-black uppercase tracking-[0.25em] text-[var(--mks-cyan)]">
-          Panel MKS
-        </p>
-        <h1 className="mt-2 font-heading text-3xl font-black tracking-tight text-[var(--mks-ink)] md:text-4xl">
-          Hola, {session.profile.full_name?.trim() || "equipo"}
-        </h1>
-        <p className="mt-2 text-sm font-medium text-neutral-600">
-          Rol:{" "}
-          <span className="font-black text-[var(--mks-pink)]">{session.profile.role}</span> · Gestiona
-          catálogo, pedidos y contenido del landing.
-        </p>
-      </div>
+    <div className="space-y-10">
+      <DashboardPageHeader
+        title={`Hola, ${session.profile.full_name?.trim() || "administrador"}`}
+        description="Gestioná catálogo, pedidos y contenido del sitio. El acceso a estas rutas queda restringido por rol en la app y en Supabase (RLS)."
+      />
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {[
-          { href: "/productos", title: "Productos", desc: "CRUD e imágenes" },
-          { href: "/pedidos", title: "Pedidos", desc: "Estados y envíos" },
-          { href: "/banners", title: "Banners", desc: "Hero y galería" },
-        ].map((c) => (
+        {QUICK_LINKS.map((c) => (
           <Link
             key={c.href}
             href={c.href}
             className={cn(
               buttonVariants({ variant: "outline" }),
-              "h-auto min-h-[120px] flex-col items-start justify-between rounded-2xl border-4 border-[var(--mks-ink)] bg-white p-5 text-left font-black shadow-[6px_6px_0_0_var(--mks-cyan)] transition hover:-translate-y-0.5",
+              "h-auto min-h-[118px] flex-col items-start justify-between rounded-2xl border-4 border-[var(--mks-ink)] bg-white p-5 text-left font-black shadow-[6px_6px_0_0_var(--mks-cyan)] transition hover:-translate-y-0.5",
             )}
           >
             <span className="text-lg text-[var(--mks-ink)]">{c.title}</span>

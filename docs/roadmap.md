@@ -2,8 +2,8 @@
 
 Documento vivo del progreso. Marca tareas con `[x]` al cerrarlas. Estado global al pie.
 
-> **Estado global:** Sprint 0 ✅ · Sprint 1 ✅ · Sprint 3 ✅ (landing marca + datos Supabase) · demás ⚪  
-> **Última actualización:** 2026-05-11
+> **Estado global:** Sprint 0 ✅ · Sprint 1 ✅ · Sprint 3 ✅ · Sprint 4 ✅ · Sprint 7 ✅ · demás ⚪  
+> **Última actualización:** 2026-05-14
 
 ## Leyenda
 
@@ -27,15 +27,15 @@ Documento vivo del progreso. Marca tareas con `[x]` al cerrarlas. Estado global 
 ## Sprint 1 — Auth y roles 🟢
 
 - [x] `.env.local` configurado contra proyecto Supabase real
-- [x] Helpers `getCurrentUser()`, `requireAuth()`, `requireRole()` / `requireStaff()`
+- [x] Helpers `getCurrentUser()`, `requireAuth()`, `requireRole()` / `requireStaff()` / `requireAdmin()`
 - [x] Página `/login` (email + password, estilo marca)
 - [x] Página `/registro` (trigger `profiles` vía `raw_user_meta_data.full_name`)
 - [x] Página `/recuperar` (reset por email)
 - [x] Logout (`SignOutButton`) + `router.refresh()`
-- [x] Guards en layout `(dashboard)` (`requireStaff`) y `(account)` (`requireAuth`)
+- [x] Guards en layout `(dashboard)` (`requireAdmin`: solo administrador) y `(account)` (`requireAuth`)
 - [x] Smoke test manual: registrar, loguear, ver perfil (lo haces tú en local)
 
-**Criterio de cierre:** usuario registrado con perfil; staff entra al dashboard con guardas.
+**Criterio de cierre:** usuario registrado con perfil; administrador entra al panel con guardas (`requireAdmin` + RLS).
 
 ## Sprint 2 — Catálogo público (lectura) ⚪
 
@@ -45,7 +45,7 @@ Documento vivo del progreso. Marca tareas con `[x]` al cerrarlas. Estado global 
 - [ ] `/categoria/[slug]` y `/catalogo/[slug]` con galería Storage
 - [ ] ISR + `revalidateTag('catalog')`
 
-## Sprint 3 — Landing dinámico + marca 🟡
+## Sprint 3 — Landing dinámico + marca 🟢
 
 - [x] Tokens de color / tipografía alineados a manual y logos (`globals.css`, fuentes en `layout.tsx`)
 - [x] Activos en `public/brand/` (logos, `favicon.png`, `manual-marca.pdf`, `logo-primary.png`)
@@ -60,12 +60,13 @@ Documento vivo del progreso. Marca tareas con `[x]` al cerrarlas. Estado global 
 
 **Criterio de cierre:** landing operativa con marca; contenido dinámico desde BD cuando exista filas activas.
 
-## Sprint 4 — Carrito + reserva de stock ⚪
+## Sprint 4 — Carrito + reserva de stock 🟢
 
-- [ ] Store Zustand + `cart_id` (cookie)
-- [ ] RPC `reserve_stock` en añadir al carrito
-- [ ] `/carrito` completo
-- [ ] Cron / función `cleanup_expired_stock_reservations`
+- [x] Store Zustand + `cart_id` (cookie `mks_cart_id`)
+- [x] RPC `reserve_stock` al añadir / actualizar cantidades en carrito (Server Actions)
+- [x] RPC `release_stock_reservation` al quitar línea (migración `20250514100000_release_stock_reservation.sql`)
+- [x] `/carrito` con líneas, sincronización de reservas y CTA desde destacados
+- [x] Edge Function `cleanup-expired-reservations` invoca `cleanup_expired_stock_reservations()` con service role y `Authorization: Bearer CRON_SECRET`
 
 ## Sprint 5 — Checkout + legal ⚪
 
@@ -80,12 +81,15 @@ Documento vivo del progreso. Marca tareas con `[x]` al cerrarlas. Estado global 
 - [ ] Transición `paid` y consumo de reservas + stock
 - [ ] Emails (Resend)
 
-## Sprint 7 — Dashboard staff ⚪
+## Sprint 7 — Panel administración (solo rol `admin`) 🟢
 
-- [ ] CRUD productos, categorías, banners, ticker, anuncios
-- [ ] Pedidos y transiciones de estado
-- [ ] Usuarios (solo admin)
-- [ ] Legal editor + publicar versión
+- [x] Acceso Next (`requireAdmin`), UX marca, enlace desde cuenta; login sin redirigir empleados al panel
+- [x] RLS + Storage: escritura catálogo / pedidos / marketing / legal alineada a `is_admin()` (migración `20250512100000_admin_only_panel_rls.sql`)
+- [x] CRUD productos, categorías, banners, ticker, anuncios (Server Actions + `revalidatePath`)
+- [x] Pedidos y transiciones de estado (`/pedidos`, `/pedidos/[orderId]`, historial en `order_status_history`)
+- [x] Usuarios (cambio de rol; trigger `profiles` ya limita cambio de rol a admin)
+- [x] Legal: alta de versión + publicar (`is_current` por tipo, ADR 0005)
+- [x] Navegación del panel en **sidebar** responsivo (misma línea visual neo-brutalist que el antiguo header)
 
 ## Sprint 8 — Calidad y deploy ⚪
 

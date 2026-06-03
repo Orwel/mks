@@ -12,6 +12,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { createSupabaseBrowserClient } from "@/infrastructure/supabase/client";
 import { cn } from "@/lib/utils";
 import { MksField, MksInput } from "@/presentation/components/auth/mks-field";
+import { isAdminPanelPath } from "@/shared/constants/admin-routes";
 import { brandAssets } from "@/shared/constants/brand";
 
 const schema = z.object({
@@ -24,7 +25,9 @@ type FormValues = z.infer<typeof schema>;
 function LoginFormInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const next = searchParams.get("next") ?? "/mi-cuenta";
+  const rawNext = searchParams.get("next") ?? "/mi-cuenta";
+  const next =
+    rawNext.startsWith("/") && !rawNext.startsWith("//") ? rawNext : "/mi-cuenta";
   const errorParam = searchParams.get("error");
 
   const [serverError, setServerError] = useState<string | null>(
@@ -32,7 +35,9 @@ function LoginFormInner() {
       ? "Tu cuenta de staff está desactivada. Contacta al administrador."
       : errorParam === "no_staff"
         ? "Necesitas una cuenta de empleado o administrador para entrar al panel."
-        : null,
+        : errorParam === "no_admin"
+          ? "El panel de administración solo está disponible para cuentas con rol administrador."
+          : null,
   );
 
   const {
@@ -71,21 +76,28 @@ function LoginFormInner() {
 
     const role = profile?.role as string | undefined;
     let target = next;
-    if (role === "admin" || role === "employee") {
-      if (
-        next === "/" ||
-        next === "/mi-cuenta" ||
-        next.startsWith("/mis-pedidos")
-      ) {
+
+    if (role === "admin") {
+      if (next === "/" || next === "/mi-cuenta" || next.startsWith("/mis-pedidos")) {
         target = "/dashboard";
-      } else {
+      } else if (isAdminPanelPath(next)) {
         target = next;
+      } else if (!next.startsWith("/")) {
+        target = "/dashboard";
       }
-    } else {
-      if (next.startsWith("/dashboard")) {
+    } else if (role === "employee") {
+      if (isAdminPanelPath(next)) {
+        target = "/mi-cuenta?error=no_admin";
+      } else if (next === "/" || next === "/mi-cuenta" || next.startsWith("/mis-pedidos")) {
+        target = "/mi-cuenta";
+      } else if (!next.startsWith("/")) {
         target = "/mi-cuenta";
       }
-      if (!target.startsWith("/")) {
+    } else {
+      if (isAdminPanelPath(next)) {
+        target = "/mi-cuenta";
+      }
+      if (!target.startsWith("/") || target.startsWith("//")) {
         target = "/mi-cuenta";
       }
     }

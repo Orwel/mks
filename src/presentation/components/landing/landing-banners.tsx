@@ -2,15 +2,22 @@ import Image from "next/image";
 import Link from "next/link";
 
 import type { BannerRow } from "@/infrastructure/supabase/queries/landing";
+import { RemoteImage } from "@/presentation/components/ui/remote-image";
 import { brandAssets } from "@/shared/constants/brand";
 
 type Props = {
   banners: BannerRow[];
+  /** Los hero ya se muestran en otro bloque (p. ej. landing4). */
+  omitHero?: boolean;
 };
 
-export function LandingBanners({ banners }: Props) {
-  const hero = banners.filter((b) => b.position === "hero");
+export function LandingBanners({ banners, omitHero = false }: Props) {
+  const hero = omitHero ? [] : banners.filter((b) => b.position === "hero");
   const secondary = banners.filter((b) => b.position !== "hero");
+
+  if (omitHero && secondary.length === 0) {
+    return null;
+  }
 
   return (
     <section className="border-b-4 border-[var(--mks-ink)] bg-[var(--mks-cream)] px-4 py-12 md:px-8">
@@ -77,8 +84,8 @@ function BannerCard({
       <div
         className={`relative w-full overflow-hidden bg-white ${large ? "aspect-[16/10] min-h-[220px]" : "aspect-[4/3] min-h-[160px]"}`}
       >
-        <Image
-          src={banner.image_url}
+        <RemoteImage
+          src={banner.images[0]?.url ?? banner.image_url ?? ""}
           alt={banner.title ?? "Banner"}
           fill
           className="object-cover"
