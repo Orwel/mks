@@ -4,7 +4,7 @@ import type { MarketRow } from "@/infrastructure/supabase/queries/markets";
 import { CatalogExploreNav } from "@/presentation/components/layout/catalog-explore-nav";
 import { SiteBottomNav } from "@/presentation/components/layout/site-bottom-nav";
 import { SiteHeaderShell } from "@/presentation/components/layout/site-header-shell";
-import { SiteMobileMenuDrawer } from "@/presentation/components/layout/site-mobile-menu-drawer";
+import { SiteMobileMoreMenu } from "@/presentation/components/layout/site-mobile-more-menu";
 import { SiteMobileNavProvider } from "@/presentation/components/layout/site-mobile-nav-context";
 import { SiteMobileNavRouteSync } from "@/presentation/components/layout/site-mobile-nav-route-sync";
 
@@ -47,11 +47,11 @@ export function SiteHeader({
         markets={markets}
         currentMarketCode={currentMarketCode}
         exploreNav={exploreNav}
+        showAdminLink={showAdminLink}
       />
-      <SiteMobileMenuDrawer
+      <SiteMobileMoreMenu
         markets={markets}
         currentMarketCode={currentMarketCode}
-        exploreNav={exploreNav}
         accountLinks={accountLinks}
         showAdminLink={showAdminLink}
       />

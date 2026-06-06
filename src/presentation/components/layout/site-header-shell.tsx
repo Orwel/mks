@@ -9,6 +9,7 @@ import type { MarketRow } from "@/infrastructure/supabase/queries/markets";
 import { AuthNavLinks } from "@/presentation/components/layout/auth-nav-links";
 import { CartNavLink } from "@/presentation/components/layout/cart-nav-link";
 import { SiteMarketSelector } from "@/presentation/components/layout/site-market-selector";
+import { mksButtonClass } from "@/presentation/components/ui/mks-button";
 import { brandAssets } from "@/shared/constants/brand";
 
 const NAV_LINKS = [
@@ -21,6 +22,7 @@ type Props = {
   markets: MarketRow[];
   currentMarketCode: string | null;
   exploreNav: ReactNode;
+  showAdminLink?: boolean;
 };
 
 function currentMarketLabel(markets: MarketRow[], code: string | null) {
@@ -30,7 +32,12 @@ function currentMarketLabel(markets: MarketRow[], code: string | null) {
   return `${market.flag_emoji ? `${market.flag_emoji} ` : ""}${market.name}`;
 }
 
-export function SiteHeaderShell({ markets, currentMarketCode, exploreNav }: Props) {
+export function SiteHeaderShell({
+  markets,
+  currentMarketCode,
+  exploreNav,
+  showAdminLink = false,
+}: Props) {
   return (
     <header className="sticky top-0 z-40 border-b-4 border-[var(--mks-ink)] bg-[var(--mks-cream)]/95 backdrop-blur-md pt-safe">
       <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-3 px-4 lg:h-[4.5rem]">
@@ -58,6 +65,14 @@ export function SiteHeaderShell({ markets, currentMarketCode, exploreNav }: Prop
             </Link>
           ))}
           <CartNavLink />
+          {showAdminLink ? (
+            <Link
+              href="/dashboard"
+              className={mksButtonClass({ variant: "accent", size: "sm", className: "hidden lg:inline-flex" })}
+            >
+              Panel admin
+            </Link>
+          ) : null}
           <AuthNavLinks />
         </nav>
       </div>

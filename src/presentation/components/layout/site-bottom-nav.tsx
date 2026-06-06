@@ -43,6 +43,7 @@ function NavIconButton({
   badge,
   onClick,
   href,
+  ariaControls,
 }: {
   active: boolean;
   label: string;
@@ -50,6 +51,7 @@ function NavIconButton({
   badge?: number;
   onClick?: () => void;
   href?: string;
+  ariaControls?: string;
 }) {
   const content = (
     <>
@@ -96,6 +98,7 @@ function NavIconButton({
       className={className}
       onClick={onClick}
       aria-expanded={active}
+      aria-controls={ariaControls}
       aria-label={label}
     >
       {content}
@@ -202,6 +205,7 @@ export function SiteBottomNav() {
                   label={item.label}
                   icon={item.icon}
                   onClick={() => mobileNav?.toggleMenu()}
+                  ariaControls="site-mobile-more-menu"
                 />
               </li>
             );

@@ -31,6 +31,7 @@ export function VersionImagesPanel({ marketCode, versionId, images }: Props) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const fileInputKey = useRef(0);
   const [isDeleting, startDeleteTransition] = useTransition();
+  const [, startUploadTransition] = useTransition();
   const boundUpload = uploadVersionImagesForm.bind(null, marketCode);
   const [uploadState, uploadAction, uploadPending] = useActionState(boundUpload, initialUploadState);
 
@@ -52,7 +53,9 @@ export function VersionImagesPanel({ marketCode, versionId, images }: Props) {
     for (const file of input.files) {
       fd.append("images", file);
     }
-    uploadAction(fd);
+    startUploadTransition(() => {
+      uploadAction(fd);
+    });
   };
 
   const handleDelete = (imageId: string) => {
