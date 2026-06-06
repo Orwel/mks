@@ -6,13 +6,14 @@ import { cn } from "@/lib/utils";
 import { DashboardPageHeader } from "@/presentation/components/layout/dashboard-page-header";
 
 const QUICK_LINKS = [
-  { href: "/productos", title: "Productos", desc: "CRUD e imágenes (Storage)" },
+  { href: "/mercados", title: "Mercados", desc: "Países, moneda e inventario por mercado" },
   { href: "/categorias", title: "Categorías", desc: "Árbol y visibilidad" },
   { href: "/pedidos", title: "Pedidos", desc: "Estados y seguimiento" },
   { href: "/destacados", title: "Destacados", desc: "Carrusel del hero en la portada" },
   { href: "/ticker", title: "Ticker", desc: "Mensajes rotativos" },
   { href: "/anuncios", title: "Anuncios pop-up", desc: "Modales al ingresar al sitio" },
   { href: "/legal", title: "Legal", desc: "Versiones y publicación" },
+  { href: "/contacto", title: "Contáctanos", desc: "Mensajes del formulario público" },
   { href: "/usuarios", title: "Usuarios", desc: "Roles (solo admin en RLS)" },
 ] as const;
 

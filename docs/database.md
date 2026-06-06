@@ -11,13 +11,14 @@ Orden en `supabase/migrations/`:
 | `20250511160002_storage.sql` | Buckets y políticas de `storage.objects` |
 | `20250511160003_views.sql` | Vista `products_with_available_stock` |
 | `20250514100000_release_stock_reservation.sql` | Función `release_stock_reservation(cart_id, product_id)` (liberar reserva al quitar del carrito) |
+| `20250603100000_mp_only_markets.sql` | Mercados CO/MX/PE/EC; trigger solo MP; USD `mercadopago_supported`; elimina INT/Stripe |
 
 ## Tablas principales
 
 - **profiles**: perfil y rol (`customer` \| `employee` \| `admin`), ligado a `auth.users`; `market_code` → mercado preferido.
 - **categories**, **products**, **product_images**: catálogo; jerarquía `categories.parent_id`; precio en `products.currency` (FK `currencies`).
 - **currencies**: catálogo ISO 4217 + flags Stripe/MP.
-- **markets**: mercados admin (moneda de cobro + pasarela).
+- **markets**: mercados admin (CO/MX/PE/EC; moneda + locale; solo Mercado Pago). Migración `20250603100000_mp_only_markets.sql`.
 - **site_settings**: singleton apariencia (colores, hero, footer, botones).
 - **currency_rates**: tasas diarias por divisa → COP.
 - **legal_documents**, **legal_acceptances**: versionado y evidencia de aceptación.

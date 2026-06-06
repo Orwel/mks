@@ -31,8 +31,8 @@ export function SignOutButton({
 
   const base =
     variant === "solid"
-      ? "border-4 border-[var(--mks-ink)] bg-[var(--mks-pink)] font-black text-white shadow-[4px_4px_0_0_var(--mks-ink)]"
-      : "border-4 border-[var(--mks-ink)] bg-white font-bold text-[var(--mks-ink)] shadow-[4px_4px_0_0_var(--mks-cyan)]";
+      ? "border-4 border-[var(--mks-ink)] bg-[var(--mks-pink)] font-black text-white shadow-[4px_4px_0_0_var(--mks-ink)] hover:bg-[var(--mks-yellow)]"
+      : "border-4 border-[var(--mks-ink)] bg-white font-bold text-[var(--mks-ink)] shadow-[4px_4px_0_0_var(--mks-cyan)] hover:bg-[var(--mks-yellow)]";
 
   return (
     <button

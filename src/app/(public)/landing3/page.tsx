@@ -14,6 +14,7 @@ export default async function Landing3Page() {
       <LandingHeroVariant3 heroBanners={heroDestacados} />
       <FeaturedByCategory
         categories={landing.categories}
+        subcategories={landing.subcategories}
         products={landing.featured}
       />
     </>

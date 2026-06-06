@@ -1,7 +1,7 @@
 /** Rutas públicas de activos de marca (`public/brand/`). */
 export const brandAssets = {
-  /** Header claro: contraste alto */
-  logoHeader: "/brand/logo-negro.png",
+  /** Header: logo a color */
+  logoHeader: "/brand/logo-primary.png",
   /** Footer u overlays oscuros */
   logoFooter: "/brand/logo-blanco.png",
   /** Hero y piezas de marketing (full color) */
@@ -19,4 +19,5 @@ export const brandMeta = {
   cyanHex: "#00D4DD",
   inkHex: "#0A0A0A",
   creamHex: "#FFF8F5",
+  yellowHex: "#EAB308",
 } as const;

@@ -14,6 +14,7 @@ export default async function Landing4Page() {
       <LandingHeroVariant4 heroBanners={heroDestacados} />
       <FeaturedByCategory
         categories={landing.categories}
+        subcategories={landing.subcategories}
         products={landing.featured}
       />
     </>

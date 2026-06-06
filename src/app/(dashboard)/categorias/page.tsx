@@ -6,7 +6,7 @@ export default async function DashboardCategoriasPage() {
   const supabase = await createSupabaseServerClient();
   const { data: categories, error } = await supabase
     .from("categories")
-    .select("id, slug, name, description, sort_order, is_active, image_url")
+    .select("id, slug, name, description, sort_order, is_active, image_url, parent_id")
     .order("sort_order", { ascending: true });
 
   const rows = (categories ?? []) as CategoryAdminRow[];

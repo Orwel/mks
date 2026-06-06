@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { createSupabaseAdminClient } from "@/infrastructure/supabase/admin";
+import { getMarketByCodeAny } from "@/infrastructure/supabase/queries/markets";
 import { formatMoney } from "@/shared/lib/format-money";
 
 type Props = {
@@ -17,7 +18,7 @@ export default async function PedidoPage({ params, searchParams }: Props) {
   const { data: order } = await supabase
     .from("orders")
     .select(
-      "order_number, status, payment_status, total, currency, customer_name, payment_provider, created_at",
+      "order_number, status, payment_status, total, currency, customer_name, payment_provider, market_code, created_at",
     )
     .eq("order_number", decoded)
     .maybeSingle();
@@ -35,6 +36,10 @@ export default async function PedidoPage({ params, searchParams }: Props) {
 
   const paid = order.payment_status === "paid" || order.status === "paid";
   const pending = status === "pending" || order.payment_status === "pending";
+  const market = order.market_code
+    ? await getMarketByCodeAny(String(order.market_code))
+    : null;
+  const moneyLocale = market?.default_locale ?? "es-CO";
 
   return (
     <div className="mx-auto max-w-lg px-4 py-16">
@@ -55,16 +60,14 @@ export default async function PedidoPage({ params, searchParams }: Props) {
           </p>
         )}
         <p className="mt-2 text-sm">
-          Total: {formatMoney(Number(order.total), String(order.currency))}
+          Total: {formatMoney(Number(order.total), String(order.currency), moneyLocale)}
         </p>
-        <p className="mt-1 text-xs text-neutral-500">
-          Pasarela: {order.payment_provider ?? "—"}
-        </p>
+        <p className="mt-1 text-xs text-neutral-500">Pago con Mercado Pago</p>
       </div>
 
       <Link
         href="/catalogo"
-        className="mt-8 inline-block rounded-xl border-4 border-[var(--mks-ink)] bg-[var(--mks-pink)] px-4 py-2 text-sm font-black text-white"
+        className="mt-8 inline-block rounded-xl border-4 border-[var(--mks-ink)] bg-[var(--mks-pink)] px-4 py-2 text-sm font-black text-white transition hover:bg-[var(--mks-yellow)]"
       >
         Seguir comprando
       </Link>

@@ -25,6 +25,27 @@ export default async function PublicLayout({
   const landing = await getLandingPageDataCached(marketCode);
   const showGate = !marketCode && markets.length > 0;
 
+  // #region agent log
+  fetch("http://127.0.0.1:7801/ingest/7171c2d7-123f-4eec-957b-9607ec2a1858", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "1e5e6c" },
+    body: JSON.stringify({
+      sessionId: "1e5e6c",
+      location: "layout.tsx:PublicLayout",
+      message: "layout siteSettings",
+      data: {
+        heroTitle: siteSettings.hero.title ?? null,
+        colorPink: siteSettings.brand_colors.pink ?? null,
+        cssVarCount: Object.keys(siteSettings.brand_colors).filter(
+          (k) => siteSettings.brand_colors[k as keyof typeof siteSettings.brand_colors],
+        ).length,
+      },
+      timestamp: Date.now(),
+      hypothesisId: "C",
+    }),
+  }).catch(() => {});
+  // #endregion
+
   return (
     <div className="flex min-h-screen flex-col">
       <SiteThemeStyle settings={siteSettings} />

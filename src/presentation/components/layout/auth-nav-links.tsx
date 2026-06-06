@@ -49,7 +49,7 @@ export function AuthNavLinks() {
         href="/mi-cuenta"
         className={cn(
           buttonVariants({ size: "sm" }),
-          "hidden rounded-xl border-4 border-[var(--mks-ink)] bg-[var(--mks-cyan)] px-3 py-2 font-black text-[var(--mks-ink)] shadow-[3px_3px_0_0_var(--mks-ink)] sm:inline-flex",
+          "hidden rounded-xl border-4 border-[var(--mks-ink)] bg-[var(--mks-cyan)] px-3 py-2 font-black text-[var(--mks-ink)] shadow-[3px_3px_0_0_var(--mks-ink)] hover:bg-[var(--mks-yellow)] sm:inline-flex",
         )}
       >
         Mi cuenta
@@ -62,7 +62,7 @@ export function AuthNavLinks() {
       href="/login"
       className={cn(
         buttonVariants({ size: "sm" }),
-        "hidden rounded-xl border-4 border-[var(--mks-ink)] bg-[var(--mks-pink)] px-3 py-2 font-black text-white shadow-[3px_3px_0_0_var(--mks-ink)] sm:inline-flex",
+        "hidden rounded-xl border-4 border-[var(--mks-ink)] bg-[var(--mks-pink)] px-3 py-2 font-black text-white shadow-[3px_3px_0_0_var(--mks-ink)] hover:bg-[var(--mks-yellow)] sm:inline-flex",
       )}
     >
       Entrar

@@ -21,7 +21,7 @@ export default async function MercadosPage() {
     <div className="space-y-6">
       <DashboardPageHeader
         title="Mercados"
-        description="Países o regiones: moneda de cobro y pasarela (Stripe / Mercado Pago)."
+        description="Países: activa o desactiva mercados. Precios y Mercado Pago usan la moneda del mercado."
       />
       {marketsRes.error ? (
         <p className="text-sm font-bold text-[var(--mks-pink)]">{marketsRes.error.message}</p>

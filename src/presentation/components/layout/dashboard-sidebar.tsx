@@ -11,7 +11,6 @@ import { cn } from "@/lib/utils";
 
 const LINKS = [
   { href: "/dashboard", label: "Resumen" },
-  { href: "/productos", label: "Productos" },
   { href: "/categorias", label: "Categorías" },
   { href: "/mercados", label: "Mercados" },
   { href: "/apariencia", label: "Apariencia" },
@@ -20,6 +19,7 @@ const LINKS = [
   { href: "/ticker", label: "Ticker" },
   { href: "/anuncios", label: "Anuncios pop-up" },
   { href: "/legal", label: "Legal" },
+  { href: "/contacto", label: "Contáctanos" },
 ] as const;
 
 function NavLink({ href, label }: { href: string; label: string }) {

@@ -6,6 +6,11 @@ import {
   getRelatedProductsCached,
 } from "@/infrastructure/supabase/queries/catalog";
 import { ProductDetailView } from "@/presentation/components/catalog/product-detail-view";
+import {
+  enrichProductWithDisplayPrice,
+  enrichProductsWithDisplayPrice,
+  resolveMarketPricingContext,
+} from "@/shared/lib/money/resolve-market-pricing";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -26,9 +31,12 @@ export default async function ProductoDetallePage({ params }: Props) {
   const product = await getProductBySlugCached(slug);
   if (!product) notFound();
 
-  const relatedProducts = product.category_slug
+  const pricing = await resolveMarketPricingContext();
+  const displayProduct = enrichProductWithDisplayPrice(pricing, product);
+  const relatedRaw = product.category_slug
     ? await getRelatedProductsCached(product.category_slug, product.id)
     : [];
+  const relatedProducts = enrichProductsWithDisplayPrice(pricing, relatedRaw);
 
-  return <ProductDetailView product={product} relatedProducts={relatedProducts} />;
+  return <ProductDetailView product={displayProduct} relatedProducts={relatedProducts} />;
 }

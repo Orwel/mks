@@ -2,9 +2,9 @@
 
 | Archivo | Uso |
 | --- | --- |
-| `logo-negro.png` | Header claro (por defecto en la app) |
+| `logo-negro.png` | Header monocromo (alternativa) |
+| `logo-primary.png` | Header y piezas a color (por defecto en la app) |
 | `logo-blanco.png` | Footer / fondos oscuros |
-| `logo-primary.png` | Hero y piezas de marketing a color |
 | `logo-naranja.png` | Variantes campaña |
 | `logo-rosa.png` | Variantes campaña |
 | `logo-primary-bn.png` | Alternativa BN |

@@ -8,42 +8,42 @@ import {
 
 const BUCKET = "product-images";
 
-export type ProductImageInsertResult = UploadBatchResult & {
+export type VersionImageInsertResult = UploadBatchResult & {
   inserted: number;
   dbError?: string;
 };
 
-export async function insertProductImagesFromForm(
+export async function insertVersionImagesFromForm(
   supabase: SupabaseClient,
-  productId: string,
+  versionId: string,
   formData: FormData,
   fieldName = "images",
-): Promise<ProductImageInsertResult> {
+): Promise<VersionImageInsertResult> {
   const files = filesFromFormData(formData, fieldName);
   if (files.length === 0) {
     return { paths: [], failures: [], inserted: 0 };
   }
 
   const { count } = await supabase
-    .from("product_images")
+    .from("product_version_images")
     .select("id", { count: "exact", head: true })
-    .eq("product_id", productId);
+    .eq("version_id", versionId);
 
   const existingCount = count ?? 0;
-  const upload = await uploadImagesToBucket(supabase, BUCKET, productId, files);
+  const upload = await uploadImagesToBucket(supabase, BUCKET, versionId, files);
 
   if (upload.paths.length === 0) {
     return { ...upload, inserted: 0 };
   }
 
   const rows = upload.paths.map((storage_path, index) => ({
-    product_id: productId,
+    version_id: versionId,
     storage_path,
     sort_order: existingCount + index,
     is_primary: existingCount === 0 && index === 0,
   }));
 
-  const { error } = await supabase.from("product_images").insert(rows);
+  const { error } = await supabase.from("product_version_images").insert(rows);
   if (error) {
     return { ...upload, inserted: 0, dbError: error.message };
   }
@@ -51,13 +51,13 @@ export async function insertProductImagesFromForm(
   return { ...upload, inserted: rows.length };
 }
 
-export async function deleteProductImageById(
+export async function deleteVersionImageById(
   supabase: SupabaseClient,
   imageId: string,
 ): Promise<{ ok: boolean; error?: string }> {
   const { data: row, error: fetchError } = await supabase
-    .from("product_images")
-    .select("id, product_id, storage_path, is_primary")
+    .from("product_version_images")
+    .select("id, version_id, storage_path, is_primary")
     .eq("id", imageId)
     .maybeSingle();
 
@@ -70,10 +70,10 @@ export async function deleteProductImageById(
     .remove([row.storage_path as string]);
 
   if (storageError) {
-    console.error("[deleteProductImage] storage", storageError.message);
+    console.error("[deleteVersionImage] storage", storageError.message);
   }
 
-  const { error: deleteError } = await supabase.from("product_images").delete().eq("id", imageId);
+  const { error: deleteError } = await supabase.from("product_version_images").delete().eq("id", imageId);
 
   if (deleteError) {
     return { ok: false, error: deleteError.message };
@@ -81,22 +81,22 @@ export async function deleteProductImageById(
 
   if (row.is_primary) {
     const { data: next } = await supabase
-      .from("product_images")
+      .from("product_version_images")
       .select("id")
-      .eq("product_id", row.product_id as string)
+      .eq("version_id", row.version_id as string)
       .order("sort_order", { ascending: true })
       .limit(1)
       .maybeSingle();
 
     if (next?.id) {
-      await supabase.from("product_images").update({ is_primary: true }).eq("id", next.id);
+      await supabase.from("product_version_images").update({ is_primary: true }).eq("id", next.id);
     }
   }
 
   return { ok: true };
 }
 
-export function formatUploadFeedback(result: ProductImageInsertResult): string | null {
+export function formatVersionUploadFeedback(result: VersionImageInsertResult): string | null {
   if (result.inserted > 0 && result.failures.length === 0) {
     return `${result.inserted} imagen${result.inserted === 1 ? "" : "es"} subida${result.inserted === 1 ? "" : "s"} correctamente.`;
   }

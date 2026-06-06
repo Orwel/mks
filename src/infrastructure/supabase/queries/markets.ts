@@ -10,7 +10,7 @@ export type MarketRow = {
   name: string;
   default_currency: string;
   default_locale: string;
-  default_payment_provider: "stripe" | "mercadopago";
+  default_payment_provider: "mercadopago";
   flag_emoji: string | null;
   sort_order: number;
   is_active: boolean;
@@ -49,6 +49,23 @@ export const getActiveMarketsCached = cache(getActiveMarkets);
 export async function getMarketByCode(code: string): Promise<MarketRow | null> {
   const markets = await getActiveMarketsCached();
   return markets.find((m) => m.code === code) ?? null;
+}
+
+/** Incluye mercados inactivos (admin / validación). */
+export async function getMarketByCodeAny(code: string): Promise<MarketRow | null> {
+  try {
+    const supabase = await createSupabaseServerClient();
+    const { data } = await supabase
+      .from("markets")
+      .select(
+        "code, name, default_currency, default_locale, default_payment_provider, flag_emoji, sort_order, is_active",
+      )
+      .eq("code", code.trim().toUpperCase())
+      .maybeSingle();
+    return (data as MarketRow | null) ?? null;
+  } catch {
+    return null;
+  }
 }
 
 export async function getMarketCodeFromCookies(): Promise<string | null> {
@@ -105,11 +122,7 @@ export async function getCatalogCurrencies(): Promise<CurrencyRow[]> {
   }
 }
 
-export async function getPaymentCurrencies(
-  provider: "stripe" | "mercadopago",
-): Promise<CurrencyRow[]> {
+export async function getMercadoPagoCurrencies(): Promise<CurrencyRow[]> {
   const all = await getCatalogCurrencies();
-  return all.filter((c) =>
-    provider === "stripe" ? c.stripe_presentment : c.mercadopago_supported,
-  );
+  return all.filter((c) => c.mercadopago_supported);
 }

@@ -114,7 +114,7 @@ export function CatalogBrowseDrawer({ categories, totalProducts }: Props) {
             <button
               type="button"
               onClick={() => setOpen(false)}
-              className="rounded-lg border-4 border-[var(--mks-ink)] bg-white p-2 text-[var(--mks-ink)] shadow-[3px_3px_0_0_var(--mks-ink)] hover:bg-[var(--mks-pink)]/15"
+              className="rounded-lg border-4 border-[var(--mks-ink)] bg-white p-2 text-[var(--mks-ink)] shadow-[3px_3px_0_0_var(--mks-ink)] hover:bg-[var(--mks-yellow)]/40"
               aria-label="Cerrar"
             >
               <X className="h-5 w-5" strokeWidth={2.5} />
@@ -210,7 +210,7 @@ export function CatalogBrowseDrawer({ categories, totalProducts }: Props) {
             <button
               type="button"
               onClick={applyAndGo}
-              className="w-full rounded-xl border-4 border-[var(--mks-ink)] bg-[var(--mks-cyan)] px-4 py-3 text-sm font-black text-[var(--mks-ink)] shadow-[4px_4px_0_0_var(--mks-ink)] hover:-translate-y-0.5"
+              className="w-full rounded-xl border-4 border-[var(--mks-ink)] bg-[var(--mks-cyan)] px-4 py-3 text-sm font-black text-[var(--mks-ink)] shadow-[4px_4px_0_0_var(--mks-ink)] transition hover:bg-[var(--mks-yellow)] hover:-translate-y-0.5"
             >
               Ver resultados
             </button>
@@ -233,7 +233,7 @@ export function CatalogBrowseDrawer({ categories, totalProducts }: Props) {
         onClick={openDrawer}
         aria-expanded={open}
         aria-controls="catalog-browse-drawer"
-        className="relative flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-[var(--mks-ink)] hover:bg-[var(--mks-cyan)]/40 md:gap-2 md:px-3"
+        className="relative flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-[var(--mks-ink)] hover:bg-[var(--mks-yellow)]/40 md:gap-2 md:px-3"
       >
         <SlidersHorizontal className="h-5 w-5 shrink-0" strokeWidth={2.5} aria-hidden />
         <span className="hidden sm:inline">Explorar</span>

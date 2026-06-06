@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 import {
   createCategory,
@@ -30,13 +30,38 @@ export type CategoryAdminRow = {
   sort_order: number;
   is_active: boolean;
   image_url: string | null;
+  parent_id: string | null;
 };
 
 type Modal = "create" | "edit" | "delete" | null;
 
-function CategoryFormFields({ category }: { category?: CategoryAdminRow }) {
+function CategoryFormFields({
+  category,
+  roots,
+  isCreate,
+}: {
+  category?: CategoryAdminRow;
+  roots: CategoryAdminRow[];
+  isCreate?: boolean;
+}) {
   return (
     <>
+      <label className="text-xs font-black uppercase text-neutral-600 md:col-span-2">
+        Categoría padre
+        <select
+          name="parent_id"
+          className={DASHBOARD_FIELD}
+          defaultValue={category?.parent_id ?? ""}
+          disabled={!!category && !category.parent_id}
+        >
+          <option value="">— Raíz (categoría principal) —</option>
+          {roots.map((r) => (
+            <option key={r.id} value={r.id}>
+              {r.name}
+            </option>
+          ))}
+        </select>
+      </label>
       <label className="text-xs font-black uppercase text-neutral-600">
         Nombre
         <input name="name" required defaultValue={category?.name} className={DASHBOARD_FIELD} />
@@ -64,6 +89,12 @@ function CategoryFormFields({ category }: { category?: CategoryAdminRow }) {
         Imagen URL
         <input name="image_url" defaultValue={category?.image_url ?? ""} className={DASHBOARD_FIELD} />
       </label>
+      {isCreate ? (
+        <label className="flex items-center gap-2 text-xs font-black uppercase text-neutral-600 md:col-span-2">
+          <input name="create_general" type="checkbox" defaultChecked className="size-4 border-2 border-[var(--mks-ink)]" />
+          Crear subcategoría &quot;General&quot; (recomendado para raíz)
+        </label>
+      ) : null}
       <label className="flex items-center gap-2 text-xs font-black uppercase text-neutral-600 md:col-span-2">
         <input
           name="is_active"
@@ -77,13 +108,44 @@ function CategoryFormFields({ category }: { category?: CategoryAdminRow }) {
   );
 }
 
+function buildTreeRows(categories: CategoryAdminRow[]) {
+  const roots = categories
+    .filter((c) => !c.parent_id)
+    .sort((a, b) => a.sort_order - b.sort_order);
+  const byParent = new Map<string, CategoryAdminRow[]>();
+  for (const c of categories) {
+    if (!c.parent_id) continue;
+    const list = byParent.get(c.parent_id) ?? [];
+    list.push(c);
+    byParent.set(c.parent_id, list);
+  }
+  for (const list of byParent.values()) {
+    list.sort((a, b) => a.sort_order - b.sort_order);
+  }
+  const rows: { category: CategoryAdminRow; depth: number }[] = [];
+  for (const root of roots) {
+    rows.push({ category: root, depth: 0 });
+    for (const child of byParent.get(root.id) ?? []) {
+      rows.push({ category: child, depth: 1 });
+    }
+  }
+  return { rows, roots };
+}
+
 export function CategoriesAdmin({ categories }: { categories: CategoryAdminRow[] }) {
   const [modal, setModal] = useState<Modal>(null);
   const [selected, setSelected] = useState<CategoryAdminRow | null>(null);
+  const { rows, roots } = useMemo(() => buildTreeRows(categories), [categories]);
+  const initialItems = useMemo(() => rows.map((r) => r.category), [rows]);
   const { items, isPending, rowDragProps, handleDragProps } = useSortableReorder(
-    categories,
+    initialItems,
     reorderCategories,
   );
+
+  const itemRows = useMemo(() => {
+    const byId = new Map(items.map((c) => [c.id, c]));
+    return rows.map((r) => ({ ...r, category: byId.get(r.category.id) ?? r.category }));
+  }, [items, rows]);
 
   const close = () => {
     setModal(null);
@@ -94,7 +156,7 @@ export function CategoriesAdmin({ categories }: { categories: CategoryAdminRow[]
     <>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-xs text-neutral-600">
-          Arrastra las filas para definir el orden en catálogo y landing.
+          Raíz → subcategoría (máx. 2 niveles). Productos solo en subcategorías.
           {isPending ? " Guardando orden…" : null}
         </p>
         <button
@@ -116,32 +178,39 @@ export function CategoriesAdmin({ categories }: { categories: CategoryAdminRow[]
               <th className="w-10 p-3" aria-label="Orden" />
               <th className="p-3">Nombre</th>
               <th className="p-3">Slug</th>
+              <th className="p-3">Nivel</th>
               <th className="p-3">Estado</th>
               <th className="p-3">Acciones</th>
             </tr>
           </thead>
           <tbody>
-            {items.length === 0 ? (
+            {itemRows.length === 0 ? (
               <tr>
-                <td colSpan={5} className="p-6 text-center text-sm text-neutral-600">
+                <td colSpan={6} className="p-6 text-center text-sm text-neutral-600">
                   No hay categorías registradas.
                 </td>
               </tr>
             ) : (
-              items.map((c, index) => (
-                <tr key={c.id} {...rowDragProps(index, "border-b border-neutral-200")}>
+              itemRows.map((row, index) => (
+                <tr key={row.category.id} {...rowDragProps(index, "border-b border-neutral-200")}>
                   <td className="p-3">
                     <SortableDragHandle dragHandleProps={handleDragProps(index)} />
                   </td>
-                  <td className="p-3 font-bold">{c.name}</td>
-                  <td className="p-3 font-mono text-xs">{c.slug}</td>
-                  <td className="p-3 text-xs font-bold uppercase">{c.is_active ? "Activa" : "Inactiva"}</td>
+                  <td className="p-3 font-bold" style={{ paddingLeft: 12 + row.depth * 20 }}>
+                    {row.depth > 0 ? "↳ " : ""}
+                    {row.category.name}
+                  </td>
+                  <td className="p-3 font-mono text-xs">{row.category.slug}</td>
+                  <td className="p-3 text-xs uppercase">{row.depth === 0 ? "Raíz" : "Sub"}</td>
+                  <td className="p-3 text-xs font-bold uppercase">
+                    {row.category.is_active ? "Activa" : "Inactiva"}
+                  </td>
                   <td className="p-3">
                     <div className="flex flex-wrap gap-2">
                       <button
                         type="button"
                         onClick={() => {
-                          setSelected(c);
+                          setSelected(row.category);
                           setModal("edit");
                         }}
                         className={DASHBOARD_BTN_GHOST}
@@ -151,7 +220,7 @@ export function CategoriesAdmin({ categories }: { categories: CategoryAdminRow[]
                       <button
                         type="button"
                         onClick={() => {
-                          setSelected(c);
+                          setSelected(row.category);
                           setModal("delete");
                         }}
                         className={DASHBOARD_BTN_DANGER}
@@ -169,7 +238,7 @@ export function CategoriesAdmin({ categories }: { categories: CategoryAdminRow[]
 
       <DashboardModal open={modal === "create"} onClose={close} title="Nueva categoría" wide>
         <form action={createCategory} className="grid gap-3 md:grid-cols-2">
-          <CategoryFormFields />
+          <CategoryFormFields roots={roots} isCreate />
           <div className="flex gap-2 md:col-span-2">
             <button type="submit" className={DASHBOARD_BTN_PRIMARY}>
               Crear
@@ -184,7 +253,7 @@ export function CategoriesAdmin({ categories }: { categories: CategoryAdminRow[]
       <DashboardModal open={modal === "edit" && !!selected} onClose={close} title="Editar categoría" wide>
         {selected ? (
           <form action={updateCategory.bind(null, selected.id)} className="grid gap-3 md:grid-cols-2">
-            <CategoryFormFields category={selected} />
+            <CategoryFormFields category={selected} roots={roots.filter((r) => r.id !== selected.id)} />
             <div className="flex gap-2 md:col-span-2">
               <button type="submit" className={DASHBOARD_BTN_PRIMARY}>
                 Guardar

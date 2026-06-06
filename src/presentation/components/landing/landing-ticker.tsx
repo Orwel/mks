@@ -5,7 +5,7 @@ import type { TickerRow } from "@/infrastructure/supabase/queries/landing";
 const FALLBACK_MESSAGES = [
   "Envío a todo Colombia",
   "Productos auténticos desde Corea",
-  "Pagos con Mercado Pago y Stripe",
+  "Pagos con Mercado Pago",
   "MY KOREA STORE — para K-lovers",
 ];
 

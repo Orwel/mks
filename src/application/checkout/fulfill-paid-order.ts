@@ -1,7 +1,7 @@
 import { createSupabaseAdminClient } from "@/infrastructure/supabase/admin";
 
 export async function recordWebhookEvent(input: {
-  provider: "stripe" | "mercadopago";
+  provider: "mercadopago";
   externalId: string;
   payload: Record<string, unknown>;
 }): Promise<{ isNew: boolean }> {
@@ -25,7 +25,7 @@ export async function recordWebhookEvent(input: {
   return { isNew: Boolean(data?.id) };
 }
 
-export async function markWebhookProcessed(externalId: string, provider: "stripe" | "mercadopago") {
+export async function markWebhookProcessed(externalId: string, provider: "mercadopago") {
   const admin = createSupabaseAdminClient();
   await admin
     .from("webhook_events")
@@ -37,8 +37,6 @@ export async function markWebhookProcessed(externalId: string, provider: "stripe
 export async function fulfillPaidOrder(input: {
   orderId: string;
   paymentExternalId: string;
-  provider: "stripe" | "mercadopago";
-  stripePaymentIntentId?: string | null;
 }): Promise<{ ok: boolean; error?: string }> {
   const admin = createSupabaseAdminClient();
 
@@ -46,8 +44,7 @@ export async function fulfillPaidOrder(input: {
     .from("orders")
     .update({
       payment_external_id: input.paymentExternalId,
-      payment_provider: input.provider,
-      stripe_payment_intent_id: input.stripePaymentIntentId ?? null,
+      payment_provider: "mercadopago",
       updated_at: new Date().toISOString(),
     })
     .eq("id", input.orderId);

@@ -13,15 +13,14 @@ export async function createMarket(formData: FormData): Promise<void> {
   const code = normalizeMarketCode(String(formData.get("code") ?? ""));
   const name = String(formData.get("name") ?? "").trim();
   const default_currency = String(formData.get("default_currency") ?? "").trim().toUpperCase();
-  const default_payment_provider = String(formData.get("default_payment_provider") ?? "").trim();
-  if (!code || !name || !default_currency || !default_payment_provider) return;
+  if (!code || !name || !default_currency) return;
 
   const { error } = await supabase.from("markets").insert({
     code,
     name,
     default_currency,
     default_locale: String(formData.get("default_locale") ?? "es").trim() || "es",
-    default_payment_provider,
+    default_payment_provider: "mercadopago",
     flag_emoji: String(formData.get("flag_emoji") ?? "").trim() || null,
     sort_order: Number(formData.get("sort_order") ?? 0) || 0,
     is_active: formData.get("is_active") === "on",
@@ -35,8 +34,7 @@ export async function updateMarket(code: string, formData: FormData): Promise<vo
   const supabase = await createSupabaseServerClient();
   const name = String(formData.get("name") ?? "").trim();
   const default_currency = String(formData.get("default_currency") ?? "").trim().toUpperCase();
-  const default_payment_provider = String(formData.get("default_payment_provider") ?? "").trim();
-  if (!name || !default_currency || !default_payment_provider) return;
+  if (!name || !default_currency) return;
 
   const { error } = await supabase
     .from("markets")
@@ -44,7 +42,7 @@ export async function updateMarket(code: string, formData: FormData): Promise<vo
       name,
       default_currency,
       default_locale: String(formData.get("default_locale") ?? "es").trim() || "es",
-      default_payment_provider,
+      default_payment_provider: "mercadopago",
       flag_emoji: String(formData.get("flag_emoji") ?? "").trim() || null,
       sort_order: Number(formData.get("sort_order") ?? 0) || 0,
       is_active: formData.get("is_active") === "on",

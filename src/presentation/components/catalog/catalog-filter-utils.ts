@@ -11,7 +11,10 @@ export type StockFilter = "all" | "in_stock" | "out_of_stock";
 
 export type CatalogFiltersState = {
   q: string;
+  /** Slug de categoría raíz. */
   categoria: string | null;
+  /** Slug de subcategoría. */
+  subcategoria: string | null;
   minPrice: number | null;
   maxPrice: number | null;
   stock: StockFilter;
@@ -49,6 +52,7 @@ export function parseCatalogSearchParams(params: URLSearchParams): CatalogFilter
   return {
     q: params.get("q")?.trim() ?? "",
     categoria: params.get("categoria") || null,
+    subcategoria: params.get("subcategoria") || null,
     minPrice: minPrice !== null && !Number.isNaN(minPrice) ? minPrice : null,
     maxPrice: maxPrice !== null && !Number.isNaN(maxPrice) ? maxPrice : null,
     stock,
@@ -63,6 +67,7 @@ export function catalogFiltersToSearchParams(filters: CatalogFiltersState): URLS
 
   if (filters.q) params.set("q", filters.q);
   if (filters.categoria) params.set("categoria", filters.categoria);
+  if (filters.subcategoria) params.set("subcategoria", filters.subcategoria);
   if (filters.minPrice !== null) params.set("min", String(filters.minPrice));
   if (filters.maxPrice !== null) params.set("max", String(filters.maxPrice));
   if (filters.stock !== "all") params.set("stock", filters.stock);
@@ -90,14 +95,21 @@ function metadataMatches(product: CatalogProduct, metadata: Record<string, strin
   return true;
 }
 
-export function filterCatalogProducts(
-  products: CatalogProduct[],
+export function filterCatalogProducts<T extends CatalogProduct>(
+  products: T[],
   filters: CatalogFiltersState,
-): CatalogProduct[] {
+): T[] {
   const q = filters.q.toLowerCase();
 
   let result = products.filter((p) => {
-    if (filters.categoria && p.category_slug !== filters.categoria) return false;
+    if (filters.subcategoria && p.category_slug !== filters.subcategoria) return false;
+    if (
+      filters.categoria &&
+      !filters.subcategoria &&
+      p.parent_category_slug !== filters.categoria
+    ) {
+      return false;
+    }
 
     if (filters.destacados && !p.is_featured) return false;
 
@@ -110,7 +122,13 @@ export function filterCatalogProducts(
     if (!metadataMatches(p, filters.metadata)) return false;
 
     if (q) {
-      const haystack = [p.name, p.description ?? "", p.sku ?? "", p.category_name]
+      const haystack = [
+        p.name,
+        p.description ?? "",
+        p.sku ?? "",
+        p.category_name,
+        p.parent_category_name,
+      ]
         .join(" ")
         .toLowerCase();
       if (!haystack.includes(q)) return false;
@@ -141,6 +159,7 @@ export function countActiveFilters(filters: CatalogFiltersState): number {
   let n = 0;
   if (filters.q) n += 1;
   if (filters.categoria) n += 1;
+  if (filters.subcategoria) n += 1;
   if (filters.minPrice !== null || filters.maxPrice !== null) n += 1;
   if (filters.stock !== "all") n += 1;
   if (filters.destacados) n += 1;
@@ -152,6 +171,7 @@ export function defaultCatalogFilters(): CatalogFiltersState {
   return {
     q: "",
     categoria: null,
+    subcategoria: null,
     minPrice: null,
     maxPrice: null,
     stock: "all",

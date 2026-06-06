@@ -3,57 +3,60 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 
-import type { FeaturedProduct, LandingCategory } from "@/infrastructure/supabase/queries/landing";
+import type {
+  FeaturedProduct,
+  LandingCategory,
+  LandingSubcategory,
+} from "@/infrastructure/supabase/queries/landing";
 import { AddToCartButton } from "@/presentation/components/cart/add-to-cart-button";
-import { CategoryChip } from "@/presentation/components/catalog/category-chip";
+import { CategoryNav } from "@/presentation/components/catalog/category-nav";
 import { FeaturedProductGallery } from "@/presentation/components/landing/featured-product-gallery";
 import { formatMoney } from "@/shared/lib/format-money";
 
 type Props = {
   categories: LandingCategory[];
+  subcategories: LandingSubcategory[];
   products: FeaturedProduct[];
 };
 
-export function FeaturedByCategory({ categories, products }: Props) {
-  const [selectedSlug, setSelectedSlug] = useState<string | null>(null);
+export function FeaturedByCategory({ categories, subcategories, products }: Props) {
+  const [selectedRoot, setSelectedRoot] = useState<string | null>(null);
+  const [selectedSub, setSelectedSub] = useState<string | null>(null);
 
-  const byCategory = useMemo(() => {
-    const map = new Map<string, FeaturedProduct[]>();
-    for (const p of products) {
-      const key = p.category_slug || "otros";
-      const list = map.get(key) ?? [];
-      list.push(p);
-      map.set(key, list);
-    }
-    return map;
-  }, [products]);
-
-  const orderedCategories = useMemo(() => {
-    if (categories.length > 0) return categories;
-    return [...byCategory.entries()].map(([slug, items]) => ({
-      id: slug,
-      slug,
-      name: items[0]?.category_name ?? slug,
-      product_count: items.length,
-    }));
-  }, [categories, byCategory]);
+  const filteredProducts = useMemo(() => {
+    return products.filter((p) => {
+      if (selectedSub && p.category_slug !== selectedSub) return false;
+      if (selectedRoot && !selectedSub && p.parent_category_slug !== selectedRoot) return false;
+      return true;
+    });
+  }, [products, selectedRoot, selectedSub]);
 
   const visibleSections = useMemo(() => {
-    if (selectedSlug) {
-      const items = byCategory.get(selectedSlug) ?? [];
-      const cat = orderedCategories.find((c) => c.slug === selectedSlug);
-      return [{ slug: selectedSlug, title: cat?.name ?? selectedSlug, items }];
+    const bySub = new Map<string, FeaturedProduct[]>();
+    for (const p of filteredProducts) {
+      const key = p.category_slug || "otros";
+      const list = bySub.get(key) ?? [];
+      list.push(p);
+      bySub.set(key, list);
     }
-    return orderedCategories
-      .filter((c) => byCategory.has(c.slug))
-      .map((c) => ({
-        slug: c.slug,
-        title: c.name,
-        items: byCategory.get(c.slug) ?? [],
-      }));
-  }, [selectedSlug, orderedCategories, byCategory]);
 
-  if (orderedCategories.length === 0 && products.length === 0) {
+    const subsToShow = selectedSub
+      ? subcategories.filter((s) => s.slug === selectedSub)
+      : selectedRoot
+        ? subcategories.filter((s) => s.parent_slug === selectedRoot)
+        : subcategories.filter((s) => bySub.has(s.slug));
+
+    return subsToShow
+      .filter((s) => bySub.has(s.slug))
+      .map((s) => ({
+        slug: s.slug,
+        title: s.name,
+        parentTitle: s.parent_name,
+        items: bySub.get(s.slug) ?? [],
+      }));
+  }, [filteredProducts, selectedRoot, selectedSub, subcategories]);
+
+  if (categories.length === 0 && products.length === 0) {
     return (
       <section className="border-b-4 border-[var(--mks-ink)] bg-white px-4 py-16 md:px-8">
         <div className="mx-auto max-w-6xl text-center">
@@ -65,7 +68,7 @@ export function FeaturedByCategory({ categories, products }: Props) {
           </p>
           <Link
             href="/catalogo"
-            className="mt-6 inline-block rounded-xl border-4 border-[var(--mks-ink)] bg-[var(--mks-cyan)] px-6 py-3 text-sm font-black text-[var(--mks-ink)] shadow-[6px_6px_0_0_var(--mks-ink)]"
+            className="mt-6 inline-block rounded-xl border-4 border-[var(--mks-ink)] bg-[var(--mks-cyan)] px-6 py-3 text-sm font-black text-[var(--mks-ink)] shadow-[6px_6px_0_0_var(--mks-ink)] transition hover:bg-[var(--mks-yellow)]"
           >
             Ir al catálogo
           </Link>
@@ -86,46 +89,44 @@ export function FeaturedByCategory({ categories, products }: Props) {
           </h2>
         </header>
 
-        {orderedCategories.length > 0 ? (
-          <div
-            className="flex gap-2 overflow-x-auto pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-            role="tablist"
-            aria-label="Categorías"
-          >
-            <CategoryChip
-              active={selectedSlug === null}
-              label="Todas"
-              onClick={() => setSelectedSlug(null)}
-            />
-            {orderedCategories.map((cat) => (
-              <CategoryChip
-                key={cat.id}
-                active={selectedSlug === cat.slug}
-                label={cat.name}
-                count={cat.product_count}
-                onClick={() =>
-                  setSelectedSlug((prev) => (prev === cat.slug ? null : cat.slug))
-                }
-              />
-            ))}
-          </div>
-        ) : null}
+        <CategoryNav
+          roots={categories.map((c) => ({
+            ...c,
+            description: null,
+            image_url: null,
+          }))}
+          subcategories={subcategories.map((s) => ({
+            ...s,
+            description: null,
+            image_url: null,
+          }))}
+          selectedRoot={selectedRoot}
+          selectedSub={selectedSub}
+          totalCount={products.length}
+          onSelectRoot={(slug) => {
+            setSelectedRoot(slug);
+            setSelectedSub(null);
+          }}
+          onSelectSub={(slug, parentSlug) => {
+            setSelectedSub(slug);
+            if (slug && parentSlug) setSelectedRoot(parentSlug);
+          }}
+        />
 
         <div className="space-y-12">
-          {visibleSections.map(({ slug, title, items }) => (
-            <CategorySection key={slug} slug={slug} title={title} items={items} />
+          {visibleSections.map(({ slug, title, parentTitle, items }) => (
+            <CategorySection
+              key={slug}
+              slug={slug}
+              title={title}
+              parentTitle={parentTitle}
+              items={items}
+            />
           ))}
 
-          {selectedSlug && visibleSections[0]?.items.length === 0 ? (
-            <CategoryEmptyState
-              title={visibleSections[0]?.title ?? selectedSlug}
-              slug={selectedSlug}
-            />
-          ) : null}
-
-          {!selectedSlug && visibleSections.length === 0 ? (
+          {filteredProducts.length === 0 ? (
             <p className="text-center text-sm text-neutral-600">
-              No hay productos destacados con stock. Explora el catálogo completo.
+              No hay productos destacados con estos filtros. Explora el catálogo completo.
             </p>
           ) : null}
         </div>
@@ -137,10 +138,12 @@ export function FeaturedByCategory({ categories, products }: Props) {
 function CategorySection({
   slug,
   title,
+  parentTitle,
   items,
 }: {
   slug: string;
   title: string;
+  parentTitle: string;
   items: FeaturedProduct[];
 }) {
   if (items.length === 0) return null;
@@ -148,7 +151,14 @@ function CategorySection({
   return (
     <div>
       <div className="mb-4 flex items-center justify-between gap-4">
-        <h3 className="font-heading text-xl font-black text-[var(--mks-ink)]">{title}</h3>
+        <div>
+          {parentTitle ? (
+            <p className="text-xs font-bold uppercase tracking-wide text-neutral-500">
+              {parentTitle}
+            </p>
+          ) : null}
+          <h3 className="font-heading text-xl font-black text-[var(--mks-ink)]">{title}</h3>
+        </div>
         <Link
           href={`/categoria/${slug}`}
           className="shrink-0 text-sm font-bold text-[var(--mks-pink)] underline decoration-4 underline-offset-4 hover:text-[var(--mks-ink)]"
@@ -157,25 +167,6 @@ function CategorySection({
         </Link>
       </div>
       <ProductCarousel items={items} />
-    </div>
-  );
-}
-
-function CategoryEmptyState({ title, slug }: { title: string; slug: string }) {
-  return (
-    <div className="rounded-xl border-4 border-dashed border-[var(--mks-ink)]/30 bg-[var(--mks-cream)]/50 px-6 py-10 text-center">
-      <p className="font-heading text-lg font-black text-[var(--mks-ink)]">
-        Sin destacados en {title}
-      </p>
-      <p className="mt-2 text-sm text-neutral-600">
-        Puedes ver todos los productos de esta categoría en el catálogo.
-      </p>
-      <Link
-        href={`/categoria/${slug}`}
-        className="mt-5 inline-block rounded-xl border-4 border-[var(--mks-ink)] bg-[var(--mks-cyan)] px-5 py-2.5 text-sm font-black text-[var(--mks-ink)] shadow-[4px_4px_0_0_var(--mks-ink)]"
-      >
-        Ver categoría {title}
-      </Link>
     </div>
   );
 }
@@ -207,6 +198,8 @@ function ProductCarousel({ items }: { items: FeaturedProduct[] }) {
             </p>
             <AddToCartButton
               productId={p.id}
+              versionId={p.default_version_id ?? ""}
+              marketCode={p.market_code}
               slug={p.slug}
               name={p.name}
               price={p.price}

@@ -18,7 +18,15 @@ export function useSortableReorder<T extends ItemWithId>(
   const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
-    setItems(initialItems);
+    setItems((current) => {
+      if (
+        current.length === initialItems.length &&
+        current.every((item, i) => item.id === initialItems[i]?.id)
+      ) {
+        return current;
+      }
+      return initialItems;
+    });
   }, [initialItems]);
 
   const saveOrder = useCallback(

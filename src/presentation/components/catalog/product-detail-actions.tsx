@@ -8,6 +8,8 @@ import { useCartStore } from "@/presentation/stores/cart-store";
 
 type Props = {
   productId: string;
+  versionId: string;
+  marketCode: string;
   slug: string;
   name: string;
   price: number;
@@ -29,6 +31,8 @@ function reserveErrorMessage(code: string): string {
 
 export function ProductDetailActions({
   productId,
+  versionId,
+  marketCode,
   slug,
   name,
   price,
@@ -43,7 +47,7 @@ export function ProductDetailActions({
   const [error, setError] = useState<string | null>(null);
 
   const inStock = availableStock > 0;
-  const cartQty = lines.find((l) => l.productId === productId)?.quantity ?? 0;
+  const cartQty = lines.find((l) => l.versionId === versionId)?.quantity ?? 0;
   const maxAdd = Math.max(0, availableStock - cartQty);
   const disabled = !inStock || loading || maxAdd < 1;
 
@@ -59,7 +63,7 @@ export function ProductDetailActions({
       return;
     }
     setLoading(true);
-    const r = await reserveCartLine({ productId, quantity: next });
+    const r = await reserveCartLine({ versionId, marketCode, quantity: next });
     setLoading(false);
     if (!r.ok) {
       setError(reserveErrorMessage(r.error));
@@ -67,6 +71,8 @@ export function ProductDetailActions({
     }
     upsertLine({
       productId,
+      versionId,
+      marketCode,
       slug,
       name,
       price,
@@ -90,7 +96,7 @@ export function ProductDetailActions({
                 type="button"
                 disabled={disabled || quantity <= 1}
                 onClick={() => setQuantity((q) => clampQuantity(q - 1))}
-                className="flex h-11 w-11 items-center justify-center rounded-lg border-4 border-[var(--mks-ink)] bg-white text-lg font-black text-[var(--mks-ink)] shadow-[3px_3px_0_0_var(--mks-ink)] transition enabled:hover:bg-[var(--mks-cyan)]/40 disabled:cursor-not-allowed disabled:opacity-40"
+                className="flex h-11 w-11 items-center justify-center rounded-lg border-4 border-[var(--mks-ink)] bg-white text-lg font-black text-[var(--mks-ink)] shadow-[3px_3px_0_0_var(--mks-ink)] transition enabled:hover:bg-[var(--mks-yellow)] disabled:cursor-not-allowed disabled:opacity-40"
                 aria-label="Menos"
               >
                 −
@@ -109,7 +115,7 @@ export function ProductDetailActions({
                 type="button"
                 disabled={disabled || quantity >= maxAdd}
                 onClick={() => setQuantity((q) => clampQuantity(q + 1))}
-                className="flex h-11 w-11 items-center justify-center rounded-lg border-4 border-[var(--mks-ink)] bg-white text-lg font-black text-[var(--mks-ink)] shadow-[3px_3px_0_0_var(--mks-ink)] transition enabled:hover:bg-[var(--mks-cyan)]/40 disabled:cursor-not-allowed disabled:opacity-40"
+                className="flex h-11 w-11 items-center justify-center rounded-lg border-4 border-[var(--mks-ink)] bg-white text-lg font-black text-[var(--mks-ink)] shadow-[3px_3px_0_0_var(--mks-ink)] transition enabled:hover:bg-[var(--mks-yellow)] disabled:cursor-not-allowed disabled:opacity-40"
                 aria-label="Más"
               >
                 +
@@ -128,7 +134,7 @@ export function ProductDetailActions({
         type="button"
         disabled={disabled}
         onClick={() => void onAdd()}
-        className="w-full rounded-xl border-4 border-[var(--mks-ink)] bg-[var(--mks-cyan)] py-4 text-center text-sm font-black uppercase text-[var(--mks-ink)] shadow-[6px_6px_0_0_var(--mks-ink)] transition enabled:hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-50"
+        className="w-full rounded-xl border-4 border-[var(--mks-ink)] bg-[var(--mks-cyan)] py-4 text-center text-sm font-black uppercase text-[var(--mks-ink)] shadow-[6px_6px_0_0_var(--mks-ink)] transition enabled:hover:bg-[var(--mks-yellow)] enabled:hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-50"
       >
         {loading ? "…" : inStock ? "Añadir al carrito" : "Agotado"}
       </button>
@@ -139,7 +145,7 @@ export function ProductDetailActions({
 
       <Link
         href="/carrito"
-        className="block w-full rounded-xl border-4 border-[var(--mks-ink)] bg-white py-3 text-center text-sm font-black uppercase text-[var(--mks-ink)] shadow-[4px_4px_0_0_var(--mks-ink)] transition hover:-translate-y-0.5"
+        className="block w-full rounded-xl border-4 border-[var(--mks-ink)] bg-white py-3 text-center text-sm font-black uppercase text-[var(--mks-ink)] shadow-[4px_4px_0_0_var(--mks-ink)] transition hover:bg-[var(--mks-yellow)] hover:-translate-y-0.5"
       >
         Ver carrito
       </Link>

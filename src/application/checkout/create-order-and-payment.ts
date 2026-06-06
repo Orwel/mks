@@ -1,20 +1,19 @@
 import { headers } from "next/headers";
 
 import { createMercadoPagoPreference } from "@/application/checkout/mercadopago-checkout";
-import { createStripeCheckoutSession } from "@/application/checkout/stripe-checkout";
 import { isMercadoPagoConfigured } from "@/infrastructure/payments/mercadopago-client";
-import { isStripeConfigured } from "@/infrastructure/payments/stripe-client";
 import { createSupabaseServerClient } from "@/infrastructure/supabase/server";
 import {
   getCurrencyRatesMapCached,
   getMarketByCode,
+  getMarketCodeFromCookies,
 } from "@/infrastructure/supabase/queries/markets";
-import { getMarketCodeFromCookies } from "@/infrastructure/supabase/queries/markets";
 import { currencyMetaFromRow } from "@/shared/lib/money/currency-meta";
 import { convertAmount, roundForCurrency } from "@/shared/lib/money/convert-amount";
 
 export type CheckoutLineInput = {
   productId: string;
+  versionId: string;
   quantity: number;
 };
 
@@ -52,11 +51,7 @@ export async function createOrderAndPayment(input: {
     return { ok: false, error: "Mercado no válido." };
   }
 
-  const provider = market.default_payment_provider;
-  if (provider === "stripe" && !isStripeConfigured()) {
-    return { ok: false, error: "Stripe no está configurado en el servidor." };
-  }
-  if (provider === "mercadopago" && !isMercadoPagoConfigured()) {
+  if (!isMercadoPagoConfigured()) {
     return { ok: false, error: "Mercado Pago no está configurado en el servidor." };
   }
 
@@ -82,21 +77,25 @@ export async function createOrderAndPayment(input: {
     zero_decimal: Boolean(currencyRow.zero_decimal),
   });
 
-  const productIds = input.lines.map((l) => l.productId);
-  const { data: products } = await supabase
-    .from("products")
-    .select("id, name, price, currency, is_active")
-    .in("id", productIds)
+  const versionIds = input.lines.map((l) => l.versionId);
+  const { data: versions } = await supabase
+    .from("product_versions")
+    .select(
+      "id, name, product_id, is_active, products(id, name, is_active), product_version_market_stock(price, currency, is_active, market_code)",
+    )
+    .in("id", versionIds)
     .eq("is_active", true);
 
-  if (!products?.length) {
+  if (!versions?.length) {
     return { ok: false, error: "Productos no disponibles." };
   }
 
-  const productMap = new Map(products.map((p) => [p.id as string, p]));
+  const versionMap = new Map(versions.map((v) => [v.id as string, v]));
   let subtotal = 0;
   const orderItems: {
     product_id: string;
+    version_id: string;
+    version_name: string;
     product_name: string;
     unit_price: number;
     quantity: number;
@@ -105,24 +104,44 @@ export async function createOrderAndPayment(input: {
   }[] = [];
 
   for (const line of input.lines) {
-    const p = productMap.get(line.productId);
-    if (!p) return { ok: false, error: "Un producto del carrito ya no está disponible." };
+    const v = versionMap.get(line.versionId);
+    if (!v) return { ok: false, error: "Un producto del carrito ya no está disponible." };
+
+    const rawProduct = v.products as
+      | { id: string; name: string; is_active: boolean }
+      | { id: string; name: string; is_active: boolean }[]
+      | null;
+    const product = Array.isArray(rawProduct) ? rawProduct[0] : rawProduct;
+    if (!product?.is_active) {
+      return { ok: false, error: "Un producto del carrito ya no está disponible." };
+    }
+
+    const stocks = (v.product_version_market_stock ?? []) as {
+      price: number;
+      currency: string;
+      is_active: boolean;
+      market_code: string;
+    }[];
+    const stockRow = stocks.find((s) => s.market_code === marketCode && s.is_active);
+    if (!stockRow) {
+      return { ok: false, error: "Precio no disponible para tu mercado." };
+    }
+
     const qty = Math.floor(line.quantity);
     if (qty < 1) return { ok: false, error: "Cantidad no válida." };
 
-    const productCurrency = String(p.currency).trim();
-    const unitInOrder = convertAmount(Number(p.price), productCurrency, orderCurrency, rates);
-    if (unitInOrder === null) {
-      return { ok: false, error: `Falta tasa de cambio para ${productCurrency}.` };
-    }
-    const unitRounded = roundForCurrency(unitInOrder, currencyMeta);
+    const unitRounded = roundForCurrency(Number(stockRow.price), currencyMeta);
     subtotal += unitRounded * qty;
 
-    const copUnit = convertAmount(unitRounded, orderCurrency, "COP", rates) ?? Number(p.price);
+    const copUnit =
+      convertAmount(unitRounded, orderCurrency, "COP", rates) ?? Number(stockRow.price);
 
+    const versionName = String(v.name);
     orderItems.push({
-      product_id: line.productId,
-      product_name: String(p.name),
+      product_id: product.id,
+      version_id: line.versionId,
+      version_name: versionName,
+      product_name: `${String(product.name)}${versionName !== "Versión única" ? ` — ${versionName}` : ""}`,
       unit_price: unitRounded,
       quantity: qty,
       currency: orderCurrency,
@@ -186,7 +205,7 @@ export async function createOrderAndPayment(input: {
       currency: orderCurrency,
       rate_to_cop_snapshot: rateSnapshot,
       market_code: marketCode,
-      payment_provider: provider,
+      payment_provider: "mercadopago",
       payment_status: "pending",
       customer_name: input.customerName.trim(),
       customer_email: input.customerEmail.trim(),
@@ -206,6 +225,8 @@ export async function createOrderAndPayment(input: {
     orderItems.map((item) => ({
       order_id: orderId,
       product_id: item.product_id,
+      version_id: item.version_id,
+      version_name: item.version_name,
       product_name: item.product_name,
       unit_price: item.unit_price,
       quantity: item.quantity,
@@ -219,29 +240,6 @@ export async function createOrderAndPayment(input: {
   }
 
   try {
-    if (provider === "stripe") {
-      const { url, sessionId } = await createStripeCheckoutSession({
-        orderId,
-        orderNumber,
-        currency: orderCurrency,
-        total,
-        currencyMeta,
-        customerEmail: input.customerEmail.trim(),
-        lineDescriptions: orderItems.map((item) => ({
-          name: item.product_name,
-          quantity: item.quantity,
-          unitAmount: item.unit_price,
-        })),
-      });
-
-      await supabase
-        .from("orders")
-        .update({ stripe_checkout_session_id: sessionId, payment_external_id: sessionId })
-        .eq("id", orderId);
-
-      return { ok: true, redirectUrl: url, orderNumber };
-    }
-
     const { initPoint, preferenceId } = await createMercadoPagoPreference({
       orderId,
       orderNumber,

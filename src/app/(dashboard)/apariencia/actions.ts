@@ -60,6 +60,27 @@ export async function updateSiteSettings(formData: FormData): Promise<{ ok: bool
     updated_at: new Date().toISOString(),
   });
 
+  // #region agent log
+  fetch("http://127.0.0.1:7801/ingest/7171c2d7-123f-4eec-957b-9607ec2a1858", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "1e5e6c" },
+    body: JSON.stringify({
+      sessionId: "1e5e6c",
+      location: "actions.ts:updateSiteSettings",
+      message: "upsert result",
+      data: {
+        ok: !error,
+        errorMsg: error?.message ?? null,
+        userId: user?.id ?? null,
+        heroTitle: hero.title,
+        colorPink: brand_colors.pink,
+      },
+      timestamp: Date.now(),
+      hypothesisId: "A",
+    }),
+  }).catch(() => {});
+  // #endregion
+
   if (error) return { ok: false, message: error.message };
 
   revalidatePath("/apariencia");

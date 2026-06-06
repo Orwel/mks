@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 
 import {
@@ -24,57 +25,100 @@ export type MarketAdminRow = MarketRow;
 
 type Modal = "create" | "edit" | "delete" | null;
 
-function paymentCurrencies(provider: string, currencies: CurrencyRow[]) {
-  return currencies.filter((c) =>
-    provider === "stripe" ? c.stripe_presentment : c.mercadopago_supported,
-  );
+const PRESET_MARKETS = [
+  { code: "CO", name: "Colombia", currency: "COP", locale: "es-CO", flag: "🇨🇴" },
+  { code: "MX", name: "México", currency: "MXN", locale: "es-MX", flag: "🇲🇽" },
+  { code: "PE", name: "Perú", currency: "PEN", locale: "es-PE", flag: "🇵🇪" },
+  { code: "EC", name: "Ecuador", currency: "USD", locale: "es-EC", flag: "🇪🇨" },
+] as const;
+
+function mercadoPagoCurrencies(currencies: CurrencyRow[]) {
+  return currencies.filter((c) => c.mercadopago_supported);
 }
 
 function MarketFormFields({
   market,
   currencies,
+  existingCodes,
 }: {
   market?: MarketAdminRow;
   currencies: CurrencyRow[];
+  existingCodes: string[];
 }) {
-  const [provider, setProvider] = useState<"stripe" | "mercadopago">(
-    market?.default_payment_provider ?? "stripe",
-  );
-  const options = paymentCurrencies(provider, currencies);
+  const mpCurrencies = mercadoPagoCurrencies(currencies);
+  const availablePresets = PRESET_MARKETS.filter((p) => !existingCodes.includes(p.code));
+  const [preset, setPreset] = useState<string>(availablePresets[0]?.code ?? "");
+
+  const selectedPreset = PRESET_MARKETS.find((p) => p.code === preset);
+
+  if (!market) {
+    return (
+      <>
+        <input type="hidden" name="default_payment_provider" value="mercadopago" />
+        <label className="text-xs font-black uppercase text-neutral-600 md:col-span-2">
+          País / mercado
+          <select
+            name="preset_code"
+            className={DASHBOARD_FIELD}
+            value={preset}
+            onChange={(e) => setPreset(e.target.value)}
+            required
+          >
+            {availablePresets.length === 0 ? (
+              <option value="">Todos los países ya están creados</option>
+            ) : (
+              availablePresets.map((p) => (
+                <option key={p.code} value={p.code}>
+                  {p.flag} {p.name} ({p.currency})
+                </option>
+              ))
+            )}
+          </select>
+        </label>
+        {selectedPreset ? (
+          <>
+            <input type="hidden" name="code" value={selectedPreset.code} />
+            <input type="hidden" name="name" value={selectedPreset.name} />
+            <input type="hidden" name="default_currency" value={selectedPreset.currency} />
+            <input type="hidden" name="default_locale" value={selectedPreset.locale} />
+            <input type="hidden" name="flag_emoji" value={selectedPreset.flag} />
+          </>
+        ) : null}
+        <p className="text-xs text-neutral-600 md:col-span-2">
+          Pagos con Mercado Pago en la moneda del mercado. Puedes activar o desactivar la visibilidad en
+          tienda.
+        </p>
+        <label className="flex items-center gap-2 text-xs font-black uppercase text-neutral-600 md:col-span-2">
+          <input name="is_active" type="checkbox" defaultChecked className="size-4 border-2 border-[var(--mks-ink)]" />
+          Activo en tienda
+        </label>
+        <label className="text-xs font-black uppercase text-neutral-600">
+          Orden
+          <input name="sort_order" type="number" defaultValue={0} className={DASHBOARD_FIELD} />
+        </label>
+      </>
+    );
+  }
 
   return (
     <>
-      {!market ? (
-        <label className="text-xs font-black uppercase text-neutral-600">
-          Código (CO, INT, US…)
-          <input name="code" required className={DASHBOARD_FIELD} placeholder="CO" />
-        </label>
-      ) : null}
+      <input type="hidden" name="default_payment_provider" value="mercadopago" />
+      <p className="text-sm font-bold text-[var(--mks-ink)] md:col-span-2">
+        {market.flag_emoji} {market.name} ({market.code}) — {market.default_currency}
+      </p>
       <label className="text-xs font-black uppercase text-neutral-600">
-        Nombre
-        <input name="name" required defaultValue={market?.name} className={DASHBOARD_FIELD} />
+        Nombre visible
+        <input name="name" required defaultValue={market.name} className={DASHBOARD_FIELD} />
       </label>
       <label className="text-xs font-black uppercase text-neutral-600">
-        Pasarela
-        <select
-          name="default_payment_provider"
-          className={DASHBOARD_FIELD}
-          defaultValue={market?.default_payment_provider ?? "stripe"}
-          onChange={(e) => setProvider(e.target.value as "stripe" | "mercadopago")}
-        >
-          <option value="stripe">Stripe</option>
-          <option value="mercadopago">Mercado Pago</option>
-        </select>
-      </label>
-      <label className="text-xs font-black uppercase text-neutral-600">
-        Moneda de cobro
+        Moneda (Mercado Pago)
         <select
           name="default_currency"
           className={DASHBOARD_FIELD}
-          defaultValue={market?.default_currency ?? options[0]?.code}
+          defaultValue={market.default_currency}
           required
         >
-          {options.map((c) => (
+          {mpCurrencies.map((c) => (
             <option key={c.code} value={c.code}>
               {c.code} — {c.name}
             </option>
@@ -83,30 +127,21 @@ function MarketFormFields({
       </label>
       <label className="text-xs font-black uppercase text-neutral-600">
         Locale
-        <input
-          name="default_locale"
-          defaultValue={market?.default_locale ?? "es-CO"}
-          className={DASHBOARD_FIELD}
-        />
+        <input name="default_locale" defaultValue={market.default_locale} className={DASHBOARD_FIELD} />
       </label>
       <label className="text-xs font-black uppercase text-neutral-600">
         Emoji bandera
-        <input name="flag_emoji" defaultValue={market?.flag_emoji ?? ""} className={DASHBOARD_FIELD} />
+        <input name="flag_emoji" defaultValue={market.flag_emoji ?? ""} className={DASHBOARD_FIELD} />
       </label>
       <label className="text-xs font-black uppercase text-neutral-600">
         Orden
-        <input
-          name="sort_order"
-          type="number"
-          defaultValue={market?.sort_order ?? 0}
-          className={DASHBOARD_FIELD}
-        />
+        <input name="sort_order" type="number" defaultValue={market.sort_order} className={DASHBOARD_FIELD} />
       </label>
       <label className="flex items-center gap-2 text-xs font-black uppercase text-neutral-600 md:col-span-2">
         <input
           name="is_active"
           type="checkbox"
-          defaultChecked={market?.is_active ?? true}
+          defaultChecked={market.is_active}
           className="size-4 border-2 border-[var(--mks-ink)]"
         />
         Activo en tienda
@@ -124,14 +159,24 @@ export function MarketsAdmin({
 }) {
   const [modal, setModal] = useState<Modal>(null);
   const [selected, setSelected] = useState<MarketAdminRow | null>(null);
+  const existingCodes = markets.map((m) => m.code);
+  const presetsLeft = availablePresets(existingCodes);
 
   return (
     <>
       <div className="flex flex-wrap gap-2">
-        <button type="button" className={DASHBOARD_BTN_PRIMARY} onClick={() => setModal("create")}>
-          Nuevo mercado
+        <button
+          type="button"
+          className={DASHBOARD_BTN_PRIMARY}
+          onClick={() => setModal("create")}
+          disabled={presetsLeft.length === 0}
+        >
+          Añadir país
         </button>
       </div>
+      <p className="text-xs text-neutral-600">
+        Los compradores eligen mercado al entrar. Precios y Mercado Pago usan la moneda configurada.
+      </p>
 
       <div className={DASHBOARD_TABLE_WRAP}>
         <table className={DASHBOARD_TABLE}>
@@ -139,7 +184,6 @@ export function MarketsAdmin({
             <tr>
               <th className="p-3">Mercado</th>
               <th className="p-3">Moneda</th>
-              <th className="p-3">Pasarela</th>
               <th className="p-3">Activo</th>
               <th className="p-3" />
             </tr>
@@ -152,9 +196,14 @@ export function MarketsAdmin({
                   {m.name} ({m.code})
                 </td>
                 <td className="p-3">{m.default_currency}</td>
-                <td className="p-3">{m.default_payment_provider}</td>
                 <td className="p-3">{m.is_active ? "Sí" : "No"}</td>
                 <td className="p-3 text-right">
+                  <Link
+                    href={`/mercados/${m.code}/productos`}
+                    className={DASHBOARD_BTN_GHOST}
+                  >
+                    Productos
+                  </Link>{" "}
                   <button
                     type="button"
                     className={DASHBOARD_BTN_GHOST}
@@ -172,7 +221,7 @@ export function MarketsAdmin({
         </table>
       </div>
 
-      <DashboardModal open={modal === "create"} title="Nuevo mercado" onClose={() => setModal(null)}>
+      <DashboardModal open={modal === "create"} title="Añadir país" onClose={() => setModal(null)}>
         <form
           action={async (fd) => {
             await createMarket(fd);
@@ -180,9 +229,9 @@ export function MarketsAdmin({
           }}
           className="grid gap-4 md:grid-cols-2"
         >
-          <MarketFormFields currencies={currencies} />
+          <MarketFormFields currencies={currencies} existingCodes={existingCodes} />
           <div className="flex gap-2 md:col-span-2">
-            <button type="submit" className={DASHBOARD_BTN_PRIMARY}>
+            <button type="submit" className={DASHBOARD_BTN_PRIMARY} disabled={presetsLeft.length === 0}>
               Crear
             </button>
             <button type="button" className={DASHBOARD_BTN_GHOST} onClick={() => setModal(null)}>
@@ -205,7 +254,7 @@ export function MarketsAdmin({
             }}
             className="grid gap-4 md:grid-cols-2"
           >
-            <MarketFormFields market={selected} currencies={currencies} />
+            <MarketFormFields market={selected} currencies={currencies} existingCodes={existingCodes} />
             <div className="flex flex-wrap gap-2 md:col-span-2">
               <button type="submit" className={DASHBOARD_BTN_PRIMARY}>
                 Guardar
@@ -238,4 +287,8 @@ export function MarketsAdmin({
       </DashboardModal>
     </>
   );
+}
+
+function availablePresets(existingCodes: string[]) {
+  return PRESET_MARKETS.filter((p) => !existingCodes.includes(p.code));
 }

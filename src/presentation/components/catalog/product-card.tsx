@@ -4,9 +4,10 @@ import Link from "next/link";
 import type { CatalogProduct } from "@/infrastructure/supabase/queries/catalog";
 import { AddToCartButton } from "@/presentation/components/cart/add-to-cart-button";
 import { formatMoney } from "@/shared/lib/format-money";
+import type { ProductWithDisplayPrice } from "@/shared/lib/money/resolve-market-pricing";
 
 type Props = {
-  product: CatalogProduct;
+  product: ProductWithDisplayPrice<CatalogProduct>;
 };
 
 export function ProductCard({ product }: Props) {
@@ -51,7 +52,7 @@ export function ProductCard({ product }: Props) {
           <p className="mt-2 line-clamp-2 text-xs text-neutral-600">{product.description}</p>
         ) : null}
         <p className="mt-2 text-lg font-black text-[var(--mks-pink)]">
-          {formatMoney(product.price, product.currency)}
+          {formatMoney(product.displayPrice, product.displayCurrency, product.displayLocale)}
         </p>
         <p className={`text-xs font-bold ${inStock ? "text-emerald-700" : "text-[var(--mks-pink)]"}`}>
           {inStock
@@ -60,10 +61,12 @@ export function ProductCard({ product }: Props) {
         </p>
         <AddToCartButton
           productId={product.id}
+          versionId={product.default_version_id ?? ""}
+          marketCode={product.market_code}
           slug={product.slug}
           name={product.name}
-          price={product.price}
-          currency={product.currency}
+          price={product.displayPrice}
+          currency={product.displayCurrency}
           availableStock={product.available_stock}
           imageUrl={product.image_url}
         />

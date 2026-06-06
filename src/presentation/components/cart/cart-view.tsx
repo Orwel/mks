@@ -50,7 +50,11 @@ export function CartView() {
     let cancelled = false;
     void (async () => {
       const r = await syncCartReservations(
-        lines.map((l) => ({ productId: l.productId, quantity: l.quantity })),
+        lines.map((l) => ({
+          versionId: l.versionId,
+          marketCode: l.marketCode,
+          quantity: l.quantity,
+        })),
       );
       if (cancelled) return;
       if (!r.ok) {
@@ -73,14 +77,18 @@ export function CartView() {
     async (line: CartLine, nextQty: number) => {
       setMessage(null);
       if (nextQty < 1) {
-        setBusy(line.productId);
-        await releaseCartLine({ productId: line.productId });
-        removeLine(line.productId);
+        setBusy(line.versionId);
+        await releaseCartLine({ versionId: line.versionId, marketCode: line.marketCode });
+        removeLine(line.versionId);
         setBusy(null);
         return;
       }
-      setBusy(line.productId);
-      const r = await reserveCartLine({ productId: line.productId, quantity: nextQty });
+      setBusy(line.versionId);
+      const r = await reserveCartLine({
+        versionId: line.versionId,
+        marketCode: line.marketCode,
+        quantity: nextQty,
+      });
       if (!r.ok) {
         setMessage(reserveErrorMessage(r.error));
         setBusy(null);
@@ -110,7 +118,7 @@ export function CartView() {
         </p>
         <Link
           href="/catalogo"
-          className="mt-6 inline-block rounded-xl border-4 border-[var(--mks-ink)] bg-[var(--mks-cyan)] px-6 py-3 text-sm font-black text-[var(--mks-ink)] shadow-[6px_6px_0_0_var(--mks-ink)]"
+          className="mt-6 inline-block rounded-xl border-4 border-[var(--mks-ink)] bg-[var(--mks-cyan)] px-6 py-3 text-sm font-black text-[var(--mks-ink)] shadow-[6px_6px_0_0_var(--mks-ink)] transition hover:bg-[var(--mks-yellow)]"
         >
           Ir al catálogo
         </Link>
@@ -132,7 +140,7 @@ export function CartView() {
       <ul className="space-y-4">
         {lines.map((line) => (
           <li
-            key={line.productId}
+            key={line.versionId}
             className="flex flex-col gap-4 rounded-xl border-4 border-[var(--mks-ink)] bg-white p-4 shadow-[6px_6px_0_0_var(--mks-ink)] sm:flex-row sm:items-center sm:justify-between"
           >
             <div>
@@ -149,7 +157,7 @@ export function CartView() {
             <div className="flex flex-wrap items-center gap-2">
               <button
                 type="button"
-                disabled={busy === line.productId}
+                disabled={busy === line.versionId}
                 className="h-10 min-w-10 rounded-lg border-4 border-[var(--mks-ink)] bg-[var(--mks-cream)] text-lg font-black disabled:opacity-50"
                 onClick={() => void setQty(line, line.quantity - 1)}
                 aria-label="Quitar una unidad"
@@ -159,7 +167,7 @@ export function CartView() {
               <span className="w-10 text-center font-black">{line.quantity}</span>
               <button
                 type="button"
-                disabled={busy === line.productId}
+                disabled={busy === line.versionId}
                 className="h-10 min-w-10 rounded-lg border-4 border-[var(--mks-ink)] bg-[var(--mks-cream)] text-lg font-black disabled:opacity-50"
                 onClick={() => void setQty(line, line.quantity + 1)}
                 aria-label="Añadir una unidad"
@@ -168,8 +176,8 @@ export function CartView() {
               </button>
               <button
                 type="button"
-                disabled={busy === line.productId}
-                className="ml-2 rounded-lg border-2 border-[var(--mks-ink)] px-3 py-2 text-xs font-black uppercase text-[var(--mks-ink)] hover:bg-[var(--mks-pink)]/20"
+                disabled={busy === line.versionId}
+                className="ml-2 rounded-lg border-2 border-[var(--mks-ink)] px-3 py-2 text-xs font-black uppercase text-[var(--mks-ink)] hover:bg-[var(--mks-yellow)]/40"
                 onClick={() => void setQty(line, 0)}
               >
                 Quitar
@@ -183,11 +191,11 @@ export function CartView() {
         <p className="text-sm text-neutral-600">
           Subtotal referencial:{" "}
           <span className="font-black text-[var(--mks-ink)]">{formatMoney(subtotal, lines[0]?.currency ?? "COP")}</span>
-          . El checkout confirmará totales en la moneda de tu mercado y te redirigirá al pago (Stripe o Mercado Pago).
+          . El checkout confirmará totales en la moneda de tu mercado y te redirigirá a Mercado Pago.
         </p>
         <Link
           href="/checkout"
-          className="inline-flex items-center justify-center rounded-xl border-4 border-[var(--mks-ink)] bg-[var(--mks-pink)] px-6 py-3 text-sm font-black uppercase tracking-wide text-[var(--mks-ink)] shadow-[4px_4px_0_0_var(--mks-ink)] transition hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none"
+          className="inline-flex items-center justify-center rounded-xl border-4 border-[var(--mks-ink)] bg-[var(--mks-pink)] px-6 py-3 text-sm font-black uppercase tracking-wide text-[var(--mks-ink)] shadow-[4px_4px_0_0_var(--mks-ink)] transition hover:bg-[var(--mks-yellow)] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none"
         >
           Ir al checkout
         </Link>

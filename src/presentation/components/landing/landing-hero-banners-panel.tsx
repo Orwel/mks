@@ -55,7 +55,7 @@ export function LandingHeroBannersPanel({ banners }: Props) {
 
           <Link
             href="/catalogo"
-            className="flex items-center justify-center border-t-4 border-[var(--mks-ink)] bg-[var(--mks-cyan)] px-4 py-3 text-sm font-black text-[var(--mks-ink)] transition hover:bg-[var(--mks-cyan)]/85"
+            className="flex items-center justify-center border-t-4 border-[var(--mks-ink)] bg-[var(--mks-cyan)] px-4 py-3 text-sm font-black text-[var(--mks-ink)] transition hover:bg-[var(--mks-yellow)]"
           >
             Ver catálogo completo →
           </Link>

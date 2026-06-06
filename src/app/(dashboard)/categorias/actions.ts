@@ -49,19 +49,37 @@ export async function createCategory(formData: FormData): Promise<void> {
   if (!slug) slug = slugify(name);
   const parentRaw = String(formData.get("parent_id") ?? "").trim();
   const parent_id = parentRaw || null;
-  const { error } = await supabase.from("categories").insert({
-    name,
-    slug,
-    description: String(formData.get("description") ?? "").trim() || null,
-    parent_id,
-    sort_order: await nextCategorySortOrder(supabase),
-    is_active: formData.get("is_active") === "on",
-    image_url: String(formData.get("image_url") ?? "").trim() || null,
-  });
+  const { data: created, error } = await supabase
+    .from("categories")
+    .insert({
+      name,
+      slug,
+      description: String(formData.get("description") ?? "").trim() || null,
+      parent_id,
+      sort_order: await nextCategorySortOrder(supabase),
+      is_active: formData.get("is_active") === "on",
+      image_url: String(formData.get("image_url") ?? "").trim() || null,
+    })
+    .select("id")
+    .single();
   if (error) {
     console.error("[createCategory]", error.message);
     return;
   }
+
+  if (!parent_id && formData.get("create_general") === "on" && created?.id) {
+    const { error: childErr } = await supabase.from("categories").insert({
+      name: "General",
+      slug: `${slug}-general`,
+      description: null,
+      parent_id: created.id,
+      sort_order: await nextCategorySortOrder(supabase),
+      is_active: true,
+      image_url: null,
+    });
+    if (childErr) console.error("[createCategory general]", childErr.message);
+  }
+
   revalidatePath("/categorias");
   revalidatePath("/");
 }

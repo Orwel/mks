@@ -80,7 +80,6 @@ export async function POST(request: Request) {
       await fulfillPaidOrder({
         orderId,
         paymentExternalId: String(paymentId),
-        provider: "mercadopago",
       });
     } else if (status === "rejected" || status === "cancelled") {
       await markOrderPaymentFailed(orderId);

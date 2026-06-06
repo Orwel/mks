@@ -10,11 +10,11 @@ import { useCartStore } from "@/presentation/stores/cart-store";
 
 type Props = {
   marketLabel: string | null;
-  paymentProvider: "stripe" | "mercadopago" | null;
   orderCurrency: string | null;
+  marketLocale: string;
 };
 
-export function CheckoutForm({ marketLabel, paymentProvider, orderCurrency }: Props) {
+export function CheckoutForm({ marketLabel, orderCurrency, marketLocale }: Props) {
   const searchParams = useSearchParams();
   const cancelled = searchParams.get("cancelled") === "1";
   const lines = useCartStore((s) => s.lines);
@@ -34,20 +34,17 @@ export function CheckoutForm({ marketLabel, paymentProvider, orderCurrency }: Pr
     [lines],
   );
 
-  const providerLabel =
-    paymentProvider === "mercadopago"
-      ? "Mercado Pago"
-      : paymentProvider === "stripe"
-        ? "Stripe"
-        : "—";
-
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
     setPending(true);
     const form = new FormData(e.currentTarget);
     const result = await startCheckout({
-      lines: lines.map((l) => ({ productId: l.productId, quantity: l.quantity })),
+      lines: lines.map((l) => ({
+        productId: l.productId,
+        versionId: l.versionId,
+        quantity: l.quantity,
+      })),
       customerName: String(form.get("customer_name") ?? ""),
       customerEmail: String(form.get("customer_email") ?? ""),
       customerPhone: String(form.get("customer_phone") ?? "") || undefined,
@@ -88,7 +85,7 @@ export function CheckoutForm({ marketLabel, paymentProvider, orderCurrency }: Pr
             <span className="font-black">Mercado:</span> {marketLabel ?? "—"}
           </p>
           <p className="mt-1">
-            <span className="font-black">Pago con:</span> {providerLabel}
+            <span className="font-black">Pago:</span> Mercado Pago en {displayCurrency}
           </p>
         </div>
 
@@ -129,10 +126,10 @@ export function CheckoutForm({ marketLabel, paymentProvider, orderCurrency }: Pr
 
         <button
           type="submit"
-          disabled={pending || !paymentProvider}
-          className="rounded-xl border-4 border-[var(--mks-ink)] bg-[var(--mks-cyan)] px-6 py-3 text-sm font-black uppercase shadow-[4px_4px_0_0_var(--mks-ink)] disabled:opacity-50"
+          disabled={pending || !orderCurrency}
+          className="rounded-xl border-4 border-[var(--mks-ink)] bg-[var(--mks-cyan)] px-6 py-3 text-sm font-black uppercase shadow-[4px_4px_0_0_var(--mks-ink)] transition hover:bg-[var(--mks-yellow)] disabled:opacity-50"
         >
-          {pending ? "Redirigiendo…" : `Pagar con ${providerLabel}`}
+          {pending ? "Redirigiendo…" : `Pagar con Mercado Pago (${displayCurrency})`}
         </button>
       </div>
 
@@ -140,20 +137,22 @@ export function CheckoutForm({ marketLabel, paymentProvider, orderCurrency }: Pr
         <h2 className="text-xs font-black uppercase tracking-wide text-neutral-500">Resumen</h2>
         <ul className="mt-3 space-y-2 text-sm">
           {lines.map((l) => (
-            <li key={l.productId} className="flex justify-between gap-2">
+            <li key={l.versionId} className="flex justify-between gap-2">
               <span>
                 {l.name} × {l.quantity}
               </span>
-              <span className="shrink-0 font-medium">{formatMoney(l.price * l.quantity, l.currency)}</span>
+              <span className="shrink-0 font-medium">
+                {formatMoney(l.price * l.quantity, l.currency, marketLocale)}
+              </span>
             </li>
           ))}
         </ul>
         <p className="mt-4 flex justify-between border-t-2 border-neutral-200 pt-3 font-black">
-          <span>Total estimado</span>
-          <span>{formatMoney(subtotal, displayCurrency)}</span>
+          <span>Total</span>
+          <span>{formatMoney(subtotal, displayCurrency, marketLocale)}</span>
         </p>
         <p className="mt-2 text-xs text-neutral-500">
-          El total final se recalcula en el servidor según tu mercado ({displayCurrency}).
+          El cargo en Mercado Pago será en {displayCurrency}, según tu mercado seleccionado.
         </p>
       </aside>
     </form>

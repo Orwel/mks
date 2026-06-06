@@ -30,7 +30,8 @@ async function getOrCreateCartId(): Promise<string> {
 }
 
 export async function reserveCartLine(input: {
-  productId: string;
+  versionId: string;
+  marketCode: string;
   quantity: number;
 }): Promise<ReserveResult> {
   const qty = Math.floor(Number(input.quantity));
@@ -45,7 +46,8 @@ export async function reserveCartLine(input: {
   } = await supabase.auth.getUser();
 
   const { data, error } = await supabase.rpc("reserve_stock", {
-    p_product_id: input.productId,
+    p_version_id: input.versionId,
+    p_market_code: input.marketCode.toUpperCase(),
     p_quantity: qty,
     p_cart_id: cartId,
     p_user_id: user?.id ?? null,
@@ -64,7 +66,10 @@ export async function reserveCartLine(input: {
   return { ok: true };
 }
 
-export async function releaseCartLine(input: { productId: string }): Promise<ReserveResult> {
+export async function releaseCartLine(input: {
+  versionId: string;
+  marketCode: string;
+}): Promise<ReserveResult> {
   const supabase = await createSupabaseServerClient();
   const jar = await cookies();
   const cartId = jar.get(MKS_CART_ID_COOKIE)?.value;
@@ -74,7 +79,8 @@ export async function releaseCartLine(input: { productId: string }): Promise<Res
 
   const { data, error } = await supabase.rpc("release_stock_reservation", {
     p_cart_id: cartId,
-    p_product_id: input.productId,
+    p_version_id: input.versionId,
+    p_market_code: input.marketCode.toUpperCase(),
   });
 
   if (error) {
@@ -90,11 +96,12 @@ export async function releaseCartLine(input: { productId: string }): Promise<Res
 }
 
 export async function syncCartReservations(
-  lines: { productId: string; quantity: number }[],
+  lines: { versionId: string; marketCode: string; quantity: number }[],
 ): Promise<ReserveResult> {
   for (const line of lines) {
     const r = await reserveCartLine({
-      productId: line.productId,
+      versionId: line.versionId,
+      marketCode: line.marketCode,
       quantity: line.quantity,
     });
     if (!r.ok) {

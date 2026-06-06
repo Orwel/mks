@@ -7,10 +7,13 @@ import { useCallback, useMemo, useState, useTransition } from "react";
 import type {
   CatalogCategory,
   CatalogPageData,
+  CatalogProduct,
+  CatalogSubcategory,
   MetadataFacet,
 } from "@/infrastructure/supabase/queries/catalog";
+import type { ProductWithDisplayPrice } from "@/shared/lib/money/resolve-market-pricing";
 import { MksInput } from "@/presentation/components/auth/mks-field";
-import { CategoryChip } from "@/presentation/components/catalog/category-chip";
+import { CategoryNav } from "@/presentation/components/catalog/category-nav";
 import { ProductCard } from "@/presentation/components/catalog/product-card";
 import {
   catalogFiltersToSearchParams,
@@ -25,7 +28,9 @@ import {
 import { formatMoney } from "@/shared/lib/format-money";
 import { cn } from "@/lib/utils";
 
-type Props = CatalogPageData;
+type Props = Omit<CatalogPageData, "products"> & {
+  products: ProductWithDisplayPrice<CatalogProduct>[];
+};
 
 const inputClass =
   "w-full rounded-lg border-4 border-[var(--mks-ink)] bg-white px-3 py-2 text-sm font-medium text-[var(--mks-ink)] shadow-[3px_3px_0_0_var(--mks-cyan)] outline-none focus:border-[var(--mks-pink)] focus:shadow-[3px_3px_0_0_var(--mks-pink)]";
@@ -34,6 +39,7 @@ const labelClass = "text-xs font-black uppercase tracking-wide text-neutral-600"
 
 export function CatalogView({
   categories,
+  subcategories,
   products,
   metadataFacets,
   priceRange,
@@ -88,6 +94,18 @@ export function CatalogView({
     patch({ metadata: next });
   };
 
+  const displayCurrency = products[0]?.displayCurrency ?? products[0]?.currency ?? "COP";
+
+  const filterLabel = useMemo(() => {
+    if (filters.subcategoria) {
+      return subcategories.find((s) => s.slug === filters.subcategoria)?.name ?? filters.subcategoria;
+    }
+    if (filters.categoria) {
+      return categories.find((c) => c.slug === filters.categoria)?.name ?? filters.categoria;
+    }
+    return null;
+  }, [filters.categoria, filters.subcategoria, categories, subcategories]);
+
   return (
     <div className="border-b-4 border-[var(--mks-ink)] bg-white px-4 py-10 md:px-8 md:py-14">
       <div className="mx-auto max-w-6xl">
@@ -104,33 +122,21 @@ export function CatalogView({
           </p>
         </header>
 
-        {categories.length > 0 ? (
-          <section className="mb-8" aria-label="Categorías">
-            <h2 className="mb-3 font-heading text-sm font-black uppercase text-[var(--mks-ink)]">
-              Categorías
-            </h2>
-            <div className="flex flex-wrap gap-2">
-              <CategoryChip
-                active={!filters.categoria}
-                onClick={() => patch({ categoria: null })}
-                label="Todas"
-                count={products.length}
-              />
-              {categories.map((cat) => (
-                <CategoryChip
-                  key={cat.id}
-                  active={filters.categoria === cat.slug}
-                  onClick={() =>
-                    patch({
-                      categoria: filters.categoria === cat.slug ? null : cat.slug,
-                    })
-                  }
-                  label={cat.name}
-                  count={cat.product_count}
-                />
-              ))}
-            </div>
-          </section>
+        {(categories.length > 0 || subcategories.length > 0) ? (
+          <CategoryNav
+            roots={categories}
+            subcategories={subcategories}
+            selectedRoot={filters.categoria}
+            selectedSub={filters.subcategoria}
+            totalCount={products.length}
+            onSelectRoot={(slug) => patch({ categoria: slug, subcategoria: null })}
+            onSelectSub={(slug, parentSlug) =>
+              patch({
+                subcategoria: slug,
+                categoria: slug ? (parentSlug ?? filters.categoria) : filters.categoria,
+              })
+            }
+          />
         ) : null}
 
         <div className="mb-4 flex flex-wrap items-center gap-3">
@@ -166,6 +172,7 @@ export function CatalogView({
             <FiltersPanel
               filters={filters}
               priceRange={priceRange}
+              displayCurrency={displayCurrency}
               metadataFacets={metadataFacets}
               onPatch={patch}
               onToggleMetadata={toggleMetadata}
@@ -180,9 +187,7 @@ export function CatalogView({
                 {filtered.length === 0
                   ? "Sin resultados"
                   : `${filtered.length} producto${filtered.length === 1 ? "" : "s"}`}
-                {filters.categoria
-                  ? ` en ${categories.find((c) => c.slug === filters.categoria)?.name ?? filters.categoria}`
-                  : null}
+                {filterLabel ? ` en ${filterLabel}` : null}
               </p>
               <label className="flex items-center gap-2">
                 <span className={labelClass}>Ordenar</span>
@@ -205,7 +210,9 @@ export function CatalogView({
                 hasProducts={products.length > 0}
                 onClear={clearFilters}
                 categoria={filters.categoria}
+                subcategoria={filters.subcategoria}
                 categories={categories}
+                subcategories={subcategories}
               />
             ) : (
               <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
@@ -226,6 +233,7 @@ export function CatalogView({
 function FiltersPanel({
   filters,
   priceRange,
+  displayCurrency,
   metadataFacets,
   onPatch,
   onToggleMetadata,
@@ -234,6 +242,7 @@ function FiltersPanel({
 }: {
   filters: CatalogFiltersState;
   priceRange: { min: number; max: number };
+  displayCurrency: string;
   metadataFacets: MetadataFacet[];
   onPatch: (partial: Partial<CatalogFiltersState>) => void;
   onToggleMetadata: (key: string, value: string) => void;
@@ -256,7 +265,7 @@ function FiltersPanel({
       </div>
 
       <fieldset className="mt-4 space-y-2">
-        <legend className={labelClass}>Precio (COP)</legend>
+        <legend className={labelClass}>Precio ({displayCurrency})</legend>
         <div className="grid grid-cols-2 gap-2">
           <label className="block">
             <span className="sr-only">Precio mínimo</span>
@@ -293,8 +302,8 @@ function FiltersPanel({
         </div>
         {priceRange.max > priceRange.min ? (
           <p className="text-[0.65rem] text-neutral-500">
-            Rango en catálogo: {formatMoney(priceRange.min, "COP")} –{" "}
-            {formatMoney(priceRange.max, "COP")}
+            Rango en catálogo: {formatMoney(priceRange.min, displayCurrency)} –{" "}
+            {formatMoney(priceRange.max, displayCurrency)}
           </p>
         ) : null}
       </fieldset>
@@ -355,14 +364,21 @@ function EmptyState({
   hasProducts,
   onClear,
   categoria,
+  subcategoria,
   categories,
+  subcategories,
 }: {
   hasProducts: boolean;
   onClear: () => void;
   categoria: string | null;
+  subcategoria: string | null;
   categories: CatalogCategory[];
+  subcategories: CatalogSubcategory[];
 }) {
-  const cat = categories.find((c) => c.slug === categoria);
+  const sub = subcategories.find((s) => s.slug === subcategoria);
+  const root = categories.find((c) => c.slug === categoria);
+  const linkSlug = sub?.slug ?? root?.slug;
+  const linkName = sub?.name ?? root?.name;
 
   return (
     <div className="rounded-xl border-4 border-dashed border-[var(--mks-ink)]/30 bg-[var(--mks-cream)]/50 px-6 py-12 text-center">
@@ -379,17 +395,17 @@ function EmptyState({
           <button
             type="button"
             onClick={onClear}
-            className="rounded-xl border-4 border-[var(--mks-ink)] bg-[var(--mks-cyan)] px-5 py-2.5 text-sm font-black text-[var(--mks-ink)] shadow-[4px_4px_0_0_var(--mks-ink)]"
+            className="rounded-xl border-4 border-[var(--mks-ink)] bg-[var(--mks-cyan)] px-5 py-2.5 text-sm font-black text-[var(--mks-ink)] shadow-[4px_4px_0_0_var(--mks-ink)] transition hover:bg-[var(--mks-yellow)]"
           >
             Quitar filtros
           </button>
         ) : null}
-        {cat ? (
+        {linkSlug ? (
           <Link
-            href={`/categoria/${cat.slug}`}
+            href={`/categoria/${linkSlug}`}
             className="rounded-xl border-4 border-[var(--mks-ink)] bg-white px-5 py-2.5 text-sm font-black text-[var(--mks-ink)]"
           >
-            Ver categoría {cat.name}
+            Ver {linkName}
           </Link>
         ) : null}
       </div>

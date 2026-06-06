@@ -26,7 +26,7 @@ export function AccountTopBar({ showAdminLink }: { showAdminLink: boolean }) {
               href="/dashboard"
               className={cn(
                 buttonVariants({ size: "sm" }),
-                "rounded-xl border-4 border-[var(--mks-ink)] bg-[var(--mks-pink)] px-3 py-2 font-black text-white shadow-[3px_3px_0_0_var(--mks-ink)]",
+                "rounded-xl border-4 border-[var(--mks-ink)] bg-[var(--mks-pink)] px-3 py-2 font-black text-white shadow-[3px_3px_0_0_var(--mks-ink)] hover:bg-[var(--mks-yellow)]",
               )}
             >
               Panel admin
@@ -34,13 +34,13 @@ export function AccountTopBar({ showAdminLink }: { showAdminLink: boolean }) {
           ) : null}
           <Link
             href="/catalogo"
-            className="rounded-lg px-2 py-1 text-sm font-bold text-[var(--mks-ink)] hover:bg-[var(--mks-cyan)]/35 md:px-3"
+            className="rounded-lg px-2 py-1 text-sm font-bold text-[var(--mks-ink)] hover:bg-[var(--mks-yellow)]/40 md:px-3"
           >
             Tienda
           </Link>
           <Link
             href="/mi-cuenta"
-            className="rounded-lg px-2 py-1 text-sm font-bold text-[var(--mks-ink)] hover:bg-[var(--mks-pink)]/20 md:px-3"
+            className="rounded-lg px-2 py-1 text-sm font-bold text-[var(--mks-ink)] hover:bg-[var(--mks-yellow)]/40 md:px-3"
           >
             Mi cuenta
           </Link>

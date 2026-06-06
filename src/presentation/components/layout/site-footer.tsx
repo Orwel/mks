@@ -41,6 +41,12 @@ export function SiteFooter({ settings = {} }: Props) {
           <Link href="/catalogo" className="text-white/90 hover:text-white">
             Catálogo
           </Link>
+          <Link href="/nosotros" className="font-bold text-[var(--mks-cyan)] hover:underline">
+            Nosotros
+          </Link>
+          <Link href="/contactanos" className="font-bold text-[var(--mks-cyan)] hover:underline">
+            Contáctanos
+          </Link>
         </nav>
       </div>
       <p className="mx-auto mt-12 max-w-6xl border-t border-white/10 pt-6 text-center text-xs text-white/60 md:text-left">

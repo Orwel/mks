@@ -31,8 +31,20 @@ export function SiteHeader({ markets = [], currentMarketCode = null }: Props) {
           <SiteMarketSelector markets={markets} currentCode={currentMarketCode} />
           <CatalogExploreNav />
           <Link
+            href="/nosotros"
+            className="rounded-lg px-2 py-1 text-[var(--mks-ink)] hover:bg-[var(--mks-yellow)]/40 md:px-3"
+          >
+            Nosotros
+          </Link>
+          <Link
+            href="/contactanos"
+            className="rounded-lg px-2 py-1 text-[var(--mks-ink)] hover:bg-[var(--mks-yellow)]/40 md:px-3"
+          >
+            Contáctanos
+          </Link>
+          <Link
             href="/catalogo"
-            className="rounded-lg px-2 py-1 text-[var(--mks-ink)] hover:bg-[var(--mks-cyan)]/40 md:px-3"
+            className="rounded-lg px-2 py-1 text-[var(--mks-ink)] hover:bg-[var(--mks-yellow)]/40 md:px-3"
           >
             Catálogo
           </Link>

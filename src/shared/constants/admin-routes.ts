@@ -11,6 +11,7 @@ const ADMIN_PANEL_PREFIXES = [
   "/ticker",
   "/anuncios",
   "/legal",
+  "/contacto",
   "/usuarios",
 ] as const;
 

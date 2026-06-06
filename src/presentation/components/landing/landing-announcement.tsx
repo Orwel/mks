@@ -147,7 +147,7 @@ export function LandingAnnouncement({ announcements }: Props) {
                 {currentModal.cta_url && currentModal.cta_label ? (
                   <Link
                     href={currentModal.cta_url}
-                    className="inline-flex items-center justify-center rounded-xl border-4 border-[var(--mks-ink)] bg-[var(--mks-pink)] px-5 py-2.5 text-sm font-black text-white shadow-[4px_4px_0_0_var(--mks-ink)] transition hover:-translate-y-0.5"
+                    className="inline-flex items-center justify-center rounded-xl border-4 border-[var(--mks-ink)] bg-[var(--mks-pink)] px-5 py-2.5 text-sm font-black text-white shadow-[4px_4px_0_0_var(--mks-ink)] transition hover:bg-[var(--mks-yellow)] hover:-translate-y-0.5"
                   >
                     {currentModal.cta_label}
                   </Link>

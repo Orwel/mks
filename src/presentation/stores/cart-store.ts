@@ -15,6 +15,8 @@ function getCartStorage(): StateStorage {
 
 export type CartLine = {
   productId: string;
+  versionId: string;
+  marketCode: string;
   slug: string;
   name: string;
   price: number;
@@ -26,8 +28,9 @@ export type CartLine = {
 type CartState = {
   lines: CartLine[];
   setLines: (lines: CartLine[]) => void;
+  clearCart: () => void;
   upsertLine: (line: CartLine) => void;
-  removeLine: (productId: string) => void;
+  removeLine: (versionId: string) => void;
 };
 
 export const useCartStore = create<CartState>()(
@@ -35,9 +38,10 @@ export const useCartStore = create<CartState>()(
     (set, get) => ({
       lines: [],
       setLines: (lines) => set({ lines }),
+      clearCart: () => set({ lines: [] }),
       upsertLine: (line) => {
         const prev = get().lines;
-        const idx = prev.findIndex((l) => l.productId === line.productId);
+        const idx = prev.findIndex((l) => l.versionId === line.versionId);
         if (idx === -1) {
           set({ lines: [...prev, line] });
           return;
@@ -46,11 +50,11 @@ export const useCartStore = create<CartState>()(
         next[idx] = line;
         set({ lines: next });
       },
-      removeLine: (productId) =>
-        set({ lines: get().lines.filter((l) => l.productId !== productId) }),
+      removeLine: (versionId) =>
+        set({ lines: get().lines.filter((l) => l.versionId !== versionId) }),
     }),
     {
-      name: "mks-cart-lines",
+      name: "mks-cart-lines-v2",
       storage: createJSONStorage(getCartStorage),
     },
   ),

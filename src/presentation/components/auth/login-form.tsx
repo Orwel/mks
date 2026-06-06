@@ -144,7 +144,7 @@ function LoginFormInner() {
         disabled={isSubmitting}
         className={cn(
           buttonVariants({ size: "lg" }),
-          "h-12 w-full rounded-xl border-4 border-[var(--mks-ink)] bg-[var(--mks-pink)] text-base font-black text-white shadow-[6px_6px_0_0_var(--mks-ink)] hover:opacity-95 disabled:opacity-60",
+          "h-12 w-full rounded-xl border-4 border-[var(--mks-ink)] bg-[var(--mks-pink)] text-base font-black text-white shadow-[6px_6px_0_0_var(--mks-ink)] hover:bg-[var(--mks-yellow)] disabled:opacity-60",
         )}
       >
         {isSubmitting ? "Entrando…" : "Entrar"}

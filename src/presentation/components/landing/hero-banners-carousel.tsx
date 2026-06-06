@@ -90,7 +90,7 @@ export function HeroBannersCarousel({ banners }: Props) {
             type="button"
             onClick={goPrev}
             aria-label="Destacado anterior"
-            className="absolute left-3 top-[42%] z-20 -translate-y-1/2 rounded-lg border-4 border-[var(--mks-ink)] bg-white/95 p-2.5 text-[var(--mks-ink)] shadow-[4px_4px_0_0_var(--mks-ink)] transition hover:bg-[var(--mks-cyan)]"
+            className="absolute left-3 top-[42%] z-20 -translate-y-1/2 rounded-lg border-4 border-[var(--mks-ink)] bg-white/95 p-2.5 text-[var(--mks-ink)] shadow-[4px_4px_0_0_var(--mks-ink)] transition hover:bg-[var(--mks-yellow)]"
           >
             <ChevronLeft className="h-5 w-5" strokeWidth={2.5} />
           </button>
@@ -98,7 +98,7 @@ export function HeroBannersCarousel({ banners }: Props) {
             type="button"
             onClick={goNext}
             aria-label="Destacado siguiente"
-            className="absolute right-3 top-[42%] z-20 -translate-y-1/2 rounded-lg border-4 border-[var(--mks-ink)] bg-white/95 p-2.5 text-[var(--mks-ink)] shadow-[4px_4px_0_0_var(--mks-ink)] transition hover:bg-[var(--mks-cyan)]"
+            className="absolute right-3 top-[42%] z-20 -translate-y-1/2 rounded-lg border-4 border-[var(--mks-ink)] bg-white/95 p-2.5 text-[var(--mks-ink)] shadow-[4px_4px_0_0_var(--mks-ink)] transition hover:bg-[var(--mks-yellow)]"
           >
             <ChevronRight className="h-5 w-5" strokeWidth={2.5} />
           </button>
@@ -122,7 +122,7 @@ export function HeroBannersCarousel({ banners }: Props) {
                   "h-2 rounded-full border-2 border-[var(--mks-ink)] transition-all",
                   i === index
                     ? "w-8 bg-[var(--mks-pink)]"
-                    : "w-2 bg-white/80 hover:bg-[var(--mks-cyan)]",
+                    : "w-2 bg-white/80 hover:bg-[var(--mks-yellow)]",
                 ].join(" ")}
               />
             ))}

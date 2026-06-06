@@ -1,7 +1,11 @@
 import { cache } from "react";
 
 import { createSupabaseServerClient } from "@/infrastructure/supabase/server";
-import { publicStorageUrl } from "@/shared/lib/public-storage-url";
+import { getMarketCodeFromCookies } from "@/infrastructure/supabase/queries/markets";
+import {
+  getProductVersionsForMarket,
+  type CatalogVersion,
+} from "@/infrastructure/supabase/queries/product-versions";
 
 export type CatalogCategory = {
   id: string;
@@ -10,6 +14,12 @@ export type CatalogCategory = {
   description: string | null;
   image_url: string | null;
   product_count: number;
+};
+
+export type CatalogSubcategory = CatalogCategory & {
+  parent_id: string;
+  parent_slug: string;
+  parent_name: string;
 };
 
 export type CatalogProduct = {
@@ -25,9 +35,14 @@ export type CatalogProduct = {
   category_id: string;
   category_slug: string;
   category_name: string;
+  parent_category_slug: string;
+  parent_category_name: string;
   image_url: string | null;
   metadata: Record<string, unknown>;
   updated_at: string;
+  default_version_id: string | null;
+  default_version_name: string | null;
+  market_code: string;
 };
 
 export type MetadataFacetOption = {
@@ -43,7 +58,9 @@ export type MetadataFacet = {
 };
 
 export type CatalogPageData = {
+  /** Categorías raíz (sin parent_id). */
   categories: CatalogCategory[];
+  subcategories: CatalogSubcategory[];
   products: CatalogProduct[];
   metadataFacets: MetadataFacet[];
   priceRange: { min: number; max: number };
@@ -54,6 +71,36 @@ function hasSupabaseEnv(): boolean {
     process.env.NEXT_PUBLIC_SUPABASE_URL?.length &&
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.length,
   );
+}
+
+async function resolveCatalogMarketCode(): Promise<string> {
+  const code = await getMarketCodeFromCookies();
+  return code ?? "CO";
+}
+
+async function loadDefaultVersionsByProduct(
+  productIds: string[],
+  marketCode: string,
+): Promise<Map<string, CatalogVersion>> {
+  const map = new Map<string, CatalogVersion>();
+  if (productIds.length === 0) return map;
+
+  await Promise.all(
+    productIds.map(async (productId) => {
+      const versions = await getProductVersionsForMarket(productId, marketCode);
+      const inStock = versions.filter((v) => v.available_stock > 0);
+      const pick = inStock.sort((a, b) => a.price - b.price)[0] ?? versions[0];
+      if (pick) map.set(productId, pick);
+    }),
+  );
+
+  return map;
+}
+
+function versionPrimaryImage(version: CatalogVersion | undefined): string | null {
+  if (!version?.images.length) return null;
+  const primary = version.images.find((i) => i.is_primary) ?? version.images[0];
+  return primary?.url ?? null;
 }
 
 function facetLabel(key: string): string {
@@ -115,6 +162,7 @@ export function buildMetadataFacets(products: CatalogProduct[]): MetadataFacet[]
 export async function getCatalogPageData(): Promise<CatalogPageData> {
   const empty: CatalogPageData = {
     categories: [],
+    subcategories: [],
     products: [],
     metadataFacets: [],
     priceRange: { min: 0, max: 0 },
@@ -124,19 +172,21 @@ export async function getCatalogPageData(): Promise<CatalogPageData> {
 
   try {
     const supabase = await createSupabaseServerClient();
+    const marketCode = await resolveCatalogMarketCode();
 
     const [categoriesRes, productsRes] = await Promise.all([
       supabase
         .from("categories")
-        .select("id, slug, name, description, image_url, sort_order")
+        .select("id, slug, name, description, image_url, sort_order, parent_id")
         .eq("is_active", true)
         .order("sort_order", { ascending: true })
         .order("name", { ascending: true }),
       supabase
-        .from("products_with_available_stock")
+        .from("products_market_catalog")
         .select(
-          "id, slug, name, description, price, currency, available_stock, sku, is_featured, is_active, category_id, metadata, updated_at",
+          "id, slug, name, description, price, currency, available_stock, sku, is_featured, is_active, category_id, metadata, updated_at, market_code",
         )
+        .eq("market_code", marketCode)
         .eq("is_active", true)
         .order("name", { ascending: true }),
     ]);
@@ -157,16 +207,24 @@ export async function getCatalogPageData(): Promise<CatalogPageData> {
       updated_at: string;
     }[];
 
-    const catMap = new Map<
-      string,
-      { slug: string; name: string; description: string | null; image_url: string | null }
-    >();
+    type CatRow = {
+      id: string;
+      slug: string;
+      name: string;
+      description: string | null;
+      image_url: string | null;
+      parent_id: string | null;
+    };
+
+    const catMap = new Map<string, CatRow>();
     for (const c of categoriesRaw) {
       catMap.set(c.id as string, {
+        id: c.id as string,
         slug: c.slug as string,
         name: c.name as string,
         description: (c.description as string | null) ?? null,
         image_url: (c.image_url as string | null) ?? null,
+        parent_id: (c.parent_id as string | null) ?? null,
       });
     }
 
@@ -175,54 +233,72 @@ export async function getCatalogPageData(): Promise<CatalogPageData> {
       countByCategory.set(p.category_id, (countByCategory.get(p.category_id) ?? 0) + 1);
     }
 
-    const categories: CatalogCategory[] = categoriesRaw.map((c) => ({
+    const rootsRaw = categoriesRaw.filter((c) => !(c.parent_id as string | null));
+    const subsRaw = categoriesRaw.filter((c) => (c.parent_id as string | null));
+
+    function rootProductCount(rootId: string): number {
+      return subsRaw
+        .filter((s) => (s.parent_id as string) === rootId)
+        .reduce((sum, s) => sum + (countByCategory.get(s.id as string) ?? 0), 0);
+    }
+
+    const categories: CatalogCategory[] = rootsRaw.map((c) => ({
       id: c.id as string,
       slug: c.slug as string,
       name: c.name as string,
       description: (c.description as string | null) ?? null,
       image_url: (c.image_url as string | null) ?? null,
-      product_count: countByCategory.get(c.id as string) ?? 0,
+      product_count: rootProductCount(c.id as string),
     }));
 
-    const productIds = productsRaw.map((p) => p.id);
-    const imagesByProduct = new Map<string, string>();
-    if (productIds.length > 0) {
-      const { data: images } = await supabase
-        .from("product_images")
-        .select("product_id, storage_path, is_primary, sort_order")
-        .in("product_id", productIds)
-        .order("is_primary", { ascending: false })
-        .order("sort_order", { ascending: true });
+    const subcategories: CatalogSubcategory[] = subsRaw.map((c) => {
+      const parent = catMap.get(c.parent_id as string);
+      return {
+        id: c.id as string,
+        slug: c.slug as string,
+        name: c.name as string,
+        description: (c.description as string | null) ?? null,
+        image_url: (c.image_url as string | null) ?? null,
+        product_count: countByCategory.get(c.id as string) ?? 0,
+        parent_id: c.parent_id as string,
+        parent_slug: parent?.slug ?? "",
+        parent_name: parent?.name ?? "",
+      };
+    });
 
-      for (const row of images ?? []) {
-        const pid = row.product_id as string;
-        if (!imagesByProduct.has(pid)) {
-          imagesByProduct.set(
-            pid,
-            publicStorageUrl("product-images", row.storage_path as string),
-          );
-        }
-      }
+    const productIds = productsRaw.map((p) => p.id);
+    const defaultVersions = await loadDefaultVersionsByProduct(productIds, marketCode);
+    const imagesByProduct = new Map<string, string>();
+    for (const [pid, version] of defaultVersions) {
+      const url = versionPrimaryImage(version);
+      if (url) imagesByProduct.set(pid, url);
     }
 
     const products: CatalogProduct[] = productsRaw.map((p) => {
       const cat = catMap.get(p.category_id);
+      const parent = cat?.parent_id ? catMap.get(cat.parent_id) : null;
+      const defaultVersion = defaultVersions.get(p.id);
       return {
         id: p.id,
         slug: p.slug,
         name: p.name,
         description: p.description,
-        price: Number(p.price),
-        currency: p.currency,
-        available_stock: Number(p.available_stock),
+        price: Number(p.price ?? 0),
+        currency: String(p.currency ?? "COP"),
+        available_stock: Number(p.available_stock ?? 0),
         sku: p.sku,
         is_featured: p.is_featured,
         category_id: p.category_id,
         category_slug: cat?.slug ?? "",
         category_name: cat?.name ?? "",
+        parent_category_slug: parent?.slug ?? "",
+        parent_category_name: parent?.name ?? "",
         image_url: imagesByProduct.get(p.id) ?? null,
         metadata: (p.metadata ?? {}) as Record<string, unknown>,
         updated_at: p.updated_at,
+        default_version_id: defaultVersion?.id ?? null,
+        default_version_name: defaultVersion?.name ?? null,
+        market_code: marketCode,
       };
     });
 
@@ -234,6 +310,7 @@ export async function getCatalogPageData(): Promise<CatalogPageData> {
 
     return {
       categories,
+      subcategories,
       products,
       metadataFacets: buildMetadataFacets(products),
       priceRange,
@@ -252,6 +329,16 @@ export type ProductDetailImage = {
   is_primary: boolean;
 };
 
+export type ProductDetailVersion = {
+  id: string;
+  name: string;
+  sku: string | null;
+  price: number;
+  currency: string;
+  available_stock: number;
+  images: ProductDetailImage[];
+};
+
 export type ProductDetail = {
   id: string;
   slug: string;
@@ -264,8 +351,12 @@ export type ProductDetail = {
   is_featured: boolean;
   category_slug: string;
   category_name: string;
+  parent_category_slug: string;
+  parent_category_name: string;
   images: ProductDetailImage[];
   metadata: Record<string, unknown>;
+  market_code: string;
+  versions: ProductDetailVersion[];
 };
 
 export async function getProductBySlug(slug: string): Promise<ProductDetail | null> {
@@ -273,13 +364,15 @@ export async function getProductBySlug(slug: string): Promise<ProductDetail | nu
 
   try {
     const supabase = await createSupabaseServerClient();
+    const marketCode = await resolveCatalogMarketCode();
 
     const { data: row, error } = await supabase
-      .from("products_with_available_stock")
+      .from("products_market_catalog")
       .select(
-        "id, slug, name, description, price, currency, available_stock, sku, is_featured, is_active, category_id, metadata",
+        "id, slug, name, description, price, currency, available_stock, sku, is_featured, is_active, category_id, metadata, market_code",
       )
       .eq("slug", slug)
+      .eq("market_code", marketCode)
       .eq("is_active", true)
       .maybeSingle();
 
@@ -297,43 +390,71 @@ export async function getProductBySlug(slug: string): Promise<ProductDetail | nu
       is_featured: boolean;
       category_id: string;
       metadata: Record<string, unknown> | null;
+      market_code: string;
     };
 
     const { data: category } = await supabase
       .from("categories")
-      .select("slug, name")
+      .select("slug, name, parent_id")
       .eq("id", product.category_id)
       .eq("is_active", true)
       .maybeSingle();
 
-    const { data: imageRows } = await supabase
-      .from("product_images")
-      .select("id, storage_path, alt_text, is_primary, sort_order")
-      .eq("product_id", product.id)
-      .order("is_primary", { ascending: false })
-      .order("sort_order", { ascending: true });
+    let parentCategory: { slug: string; name: string } | null = null;
+    const parentId = category?.parent_id as string | null | undefined;
+    if (parentId) {
+      const { data: parent } = await supabase
+        .from("categories")
+        .select("slug, name")
+        .eq("id", parentId)
+        .eq("is_active", true)
+        .maybeSingle();
+      if (parent) {
+        parentCategory = {
+          slug: parent.slug as string,
+          name: parent.name as string,
+        };
+      }
+    }
 
-    const images: ProductDetailImage[] = (imageRows ?? []).map((img) => ({
-      id: img.id as string,
-      url: publicStorageUrl("product-images", img.storage_path as string),
-      alt_text: (img.alt_text as string | null) ?? null,
-      is_primary: Boolean(img.is_primary),
+    const catalogVersions = await getProductVersionsForMarket(product.id, marketCode);
+    const versions: ProductDetailVersion[] = catalogVersions.map((v) => ({
+      id: v.id,
+      name: v.name,
+      sku: v.sku,
+      price: v.price,
+      currency: v.currency,
+      available_stock: v.available_stock,
+      images: v.images.map((img) => ({
+        id: img.id,
+        url: img.url,
+        alt_text: img.alt_text,
+        is_primary: img.is_primary,
+      })),
     }));
+
+    const defaultVersion =
+      versions.find((v) => v.available_stock > 0) ?? versions[0] ?? null;
+    const images: ProductDetailImage[] = defaultVersion?.images ?? [];
 
     return {
       id: product.id,
       slug: product.slug,
       name: product.name,
       description: product.description,
-      price: Number(product.price),
-      currency: product.currency,
-      available_stock: Number(product.available_stock),
-      sku: product.sku,
+      price: defaultVersion?.price ?? Number(product.price ?? 0),
+      currency: defaultVersion?.currency ?? String(product.currency ?? "COP"),
+      available_stock: defaultVersion?.available_stock ?? Number(product.available_stock ?? 0),
+      sku: defaultVersion?.sku ?? product.sku,
       is_featured: product.is_featured,
       category_slug: (category?.slug as string) ?? "",
       category_name: (category?.name as string) ?? "",
+      parent_category_slug: parentCategory?.slug ?? "",
+      parent_category_name: parentCategory?.name ?? "",
       images,
       metadata: (product.metadata ?? {}) as Record<string, unknown>,
+      market_code: marketCode,
+      versions,
     };
   } catch {
     return null;
@@ -351,6 +472,7 @@ export async function getRelatedProducts(
 
   try {
     const supabase = await createSupabaseServerClient();
+    const marketCode = await resolveCatalogMarketCode();
 
     const { data: category } = await supabase
       .from("categories")
@@ -362,10 +484,11 @@ export async function getRelatedProducts(
     if (!category?.id) return [];
 
     const { data: productsRaw } = await supabase
-      .from("products_with_available_stock")
+      .from("products_market_catalog")
       .select(
-        "id, slug, name, description, price, currency, available_stock, sku, is_featured, is_active, category_id, metadata, updated_at",
+        "id, slug, name, description, price, currency, available_stock, sku, is_featured, is_active, category_id, metadata, updated_at, market_code",
       )
+      .eq("market_code", marketCode)
       .eq("is_active", true)
       .eq("category_id", category.id as string)
       .neq("id", excludeProductId)
@@ -391,44 +514,60 @@ export async function getRelatedProducts(
     if (rows.length === 0) return [];
 
     const productIds = rows.map((p) => p.id);
+    const defaultVersions = await loadDefaultVersionsByProduct(productIds, marketCode);
     const imagesByProduct = new Map<string, string>();
-    const { data: images } = await supabase
-      .from("product_images")
-      .select("product_id, storage_path, is_primary, sort_order")
-      .in("product_id", productIds)
-      .order("is_primary", { ascending: false })
-      .order("sort_order", { ascending: true });
-
-    for (const row of images ?? []) {
-      const pid = row.product_id as string;
-      if (!imagesByProduct.has(pid)) {
-        imagesByProduct.set(pid, publicStorageUrl("product-images", row.storage_path as string));
-      }
+    for (const [pid, version] of defaultVersions) {
+      const url = versionPrimaryImage(version);
+      if (url) imagesByProduct.set(pid, url);
     }
 
     const { data: categoryRow } = await supabase
       .from("categories")
-      .select("slug, name")
+      .select("slug, name, parent_id")
       .eq("id", category.id as string)
       .maybeSingle();
 
-    return rows.map((p) => ({
-      id: p.id,
-      slug: p.slug,
-      name: p.name,
-      description: p.description,
-      price: Number(p.price),
-      currency: p.currency,
-      available_stock: Number(p.available_stock),
-      sku: p.sku,
-      is_featured: p.is_featured,
-      category_id: p.category_id,
-      category_slug: (categoryRow?.slug as string) ?? categorySlug,
-      category_name: (categoryRow?.name as string) ?? "",
-      image_url: imagesByProduct.get(p.id) ?? null,
-      metadata: (p.metadata ?? {}) as Record<string, unknown>,
-      updated_at: p.updated_at,
-    }));
+    let parentCategory: { slug: string; name: string } | null = null;
+    const parentId = categoryRow?.parent_id as string | null | undefined;
+    if (parentId) {
+      const { data: parent } = await supabase
+        .from("categories")
+        .select("slug, name")
+        .eq("id", parentId)
+        .maybeSingle();
+      if (parent) {
+        parentCategory = {
+          slug: parent.slug as string,
+          name: parent.name as string,
+        };
+      }
+    }
+
+    return rows.map((p) => {
+      const defaultVersion = defaultVersions.get(p.id);
+      return {
+        id: p.id,
+        slug: p.slug,
+        name: p.name,
+        description: p.description,
+        price: Number(p.price ?? 0),
+        currency: String(p.currency ?? "COP"),
+        available_stock: Number(p.available_stock ?? 0),
+        sku: p.sku,
+        is_featured: p.is_featured,
+        category_id: p.category_id,
+        category_slug: (categoryRow?.slug as string) ?? categorySlug,
+        category_name: (categoryRow?.name as string) ?? "",
+        parent_category_slug: parentCategory?.slug ?? "",
+        parent_category_name: parentCategory?.name ?? "",
+        image_url: imagesByProduct.get(p.id) ?? null,
+        metadata: (p.metadata ?? {}) as Record<string, unknown>,
+        updated_at: p.updated_at,
+        default_version_id: defaultVersion?.id ?? null,
+        default_version_name: defaultVersion?.name ?? null,
+        market_code: marketCode,
+      };
+    });
   } catch {
     return [];
   }

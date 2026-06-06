@@ -1,6 +1,6 @@
 # My Korea Store (MKS)
 
-E-commerce con **Next.js 16**, **Supabase**, **Stripe** y **Mercado Pago**.
+E-commerce con **Next.js 16**, **Supabase** y **Mercado Pago** (mercados multidivisa).
 
 ## Documentación
 

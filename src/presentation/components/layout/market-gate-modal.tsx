@@ -5,6 +5,7 @@ import { useTransition } from "react";
 import { setVisitorMarket } from "@/app/(public)/market/actions";
 import type { MarketRow } from "@/infrastructure/supabase/queries/markets";
 import { cn } from "@/lib/utils";
+import { useCartStore } from "@/presentation/stores/cart-store";
 
 type Props = {
   markets: MarketRow[];
@@ -12,6 +13,7 @@ type Props = {
 
 export function MarketGateModal({ markets }: Props) {
   const [pending, startTransition] = useTransition();
+  const clearCart = useCartStore((s) => s.clearCart);
 
   if (markets.length === 0) return null;
 
@@ -40,12 +42,15 @@ export function MarketGateModal({ markets }: Props) {
                 disabled={pending}
                 className={cn(
                   "flex w-full items-center gap-3 rounded-xl border-4 border-[var(--mks-ink)] px-4 py-3 text-left font-bold transition-colors",
-                  "hover:bg-[var(--mks-cream)] disabled:opacity-60",
+                  "hover:bg-[var(--mks-yellow)]/40 disabled:opacity-60",
                 )}
                 onClick={() => {
                   startTransition(async () => {
-                    await setVisitorMarket(m.code);
-                    window.location.reload();
+                    const r = await setVisitorMarket(m.code);
+                    if (r.ok) {
+                      clearCart();
+                      window.location.reload();
+                    }
                   });
                 }}
               >

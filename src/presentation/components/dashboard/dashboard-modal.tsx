@@ -50,7 +50,7 @@ export function DashboardModal({ open, onClose, title, children, wide }: Dashboa
           <button
             type="button"
             onClick={onClose}
-            className="flex size-9 items-center justify-center rounded-lg border-2 border-[var(--mks-ink)] bg-white text-lg font-black leading-none text-[var(--mks-ink)] hover:bg-[var(--mks-cyan)]"
+            className="flex size-9 items-center justify-center rounded-lg border-2 border-[var(--mks-ink)] bg-white text-lg font-black leading-none text-[var(--mks-ink)] hover:bg-[var(--mks-yellow)]"
             aria-label="Cerrar modal"
           >
             ×

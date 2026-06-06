@@ -4,8 +4,7 @@
 
 | Ruta | Estado |
 | --- | --- |
-| `POST /api/webhooks/stripe` | Esqueleto `501` — implementar firma, idempotencia, mapeo a `orders` |
-| `POST /api/webhooks/mercadopago` | Esqueleto `501` — idem |
+| `POST /api/webhooks/mercadopago` | Firma opcional, idempotencia, `fulfill_order_payment` |
 
 Opción recomendada en producción: **Edge Functions** en `supabase/functions/*` (menor latencia, mismo secreto en Supabase) o mantener Route Handlers si prefieres un solo despliegue en Vercel.
 

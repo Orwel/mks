@@ -32,7 +32,7 @@ export function CartNavLink() {
           ? `Carrito, ${displayCount} ${displayCount === 1 ? "producto" : "productos"}`
           : "Carrito"
       }
-      className="relative rounded-lg p-2 text-[var(--mks-ink)] hover:bg-[var(--mks-pink)]/25"
+      className="relative rounded-lg p-2 text-[var(--mks-ink)] hover:bg-[var(--mks-yellow)]/40"
     >
       <ShoppingCart className="h-5 w-5 md:h-6 md:w-6" strokeWidth={2.5} aria-hidden />
       {displayCount > 0 ? (

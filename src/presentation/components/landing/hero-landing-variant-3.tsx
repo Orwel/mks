@@ -31,7 +31,7 @@ export function LandingHeroVariant3({ heroBanners = [] }: Props) {
               href="/catalogo"
               className={cn(
                 buttonVariants({ size: "lg" }),
-                "h-12 rounded-xl border-4 border-[var(--mks-ink)] bg-[var(--mks-cyan)] px-5 text-sm font-black text-[var(--mks-ink)] shadow-[6px_6px_0_0_var(--mks-ink)]",
+                "h-12 rounded-xl border-4 border-[var(--mks-ink)] bg-[var(--mks-cyan)] px-5 text-sm font-black text-[var(--mks-ink)] shadow-[6px_6px_0_0_var(--mks-ink)] hover:bg-[var(--mks-yellow)]",
               )}
             >
               Ver catálogo

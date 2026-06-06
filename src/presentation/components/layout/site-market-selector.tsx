@@ -5,6 +5,7 @@ import { useTransition } from "react";
 import { setVisitorMarket } from "@/app/(public)/market/actions";
 import type { MarketRow } from "@/infrastructure/supabase/queries/markets";
 import { cn } from "@/lib/utils";
+import { useCartStore } from "@/presentation/stores/cart-store";
 
 type Props = {
   markets: MarketRow[];
@@ -13,6 +14,7 @@ type Props = {
 
 export function SiteMarketSelector({ markets, currentCode }: Props) {
   const [pending, startTransition] = useTransition();
+  const clearCart = useCartStore((s) => s.clearCart);
   if (markets.length === 0) return null;
 
   return (
@@ -29,8 +31,11 @@ export function SiteMarketSelector({ markets, currentCode }: Props) {
           const code = e.target.value;
           if (!code) return;
           startTransition(async () => {
-            await setVisitorMarket(code);
-            window.location.reload();
+            const r = await setVisitorMarket(code);
+            if (r.ok) {
+              clearCart();
+              window.location.reload();
+            }
           });
         }}
       >

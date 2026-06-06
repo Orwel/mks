@@ -81,6 +81,10 @@ export function ImageGallery({
   }, [count]);
 
   useEffect(() => {
+    setActiveIndex(0);
+  }, [images]);
+
+  useEffect(() => {
     if (activeIndex >= count && count > 0) {
       setActiveIndex(0);
     }
@@ -131,7 +135,7 @@ export function ImageGallery({
               type="button"
               onClick={goPrev}
               aria-label="Imagen anterior"
-              className="absolute left-2 top-1/2 z-10 -translate-y-1/2 rounded-lg border-4 border-[var(--mks-ink)] bg-white/95 p-2 text-[var(--mks-ink)] shadow-[3px_3px_0_0_var(--mks-ink)] hover:bg-[var(--mks-cyan)]"
+              className="absolute left-2 top-1/2 z-10 -translate-y-1/2 rounded-lg border-4 border-[var(--mks-ink)] bg-white/95 p-2 text-[var(--mks-ink)] shadow-[3px_3px_0_0_var(--mks-ink)] hover:bg-[var(--mks-yellow)]"
             >
               <ChevronLeft className="h-5 w-5" strokeWidth={2.5} />
             </button>
@@ -139,7 +143,7 @@ export function ImageGallery({
               type="button"
               onClick={goNext}
               aria-label="Imagen siguiente"
-              className="absolute right-2 top-1/2 z-10 -translate-y-1/2 rounded-lg border-4 border-[var(--mks-ink)] bg-white/95 p-2 text-[var(--mks-ink)] shadow-[3px_3px_0_0_var(--mks-ink)] hover:bg-[var(--mks-cyan)]"
+              className="absolute right-2 top-1/2 z-10 -translate-y-1/2 rounded-lg border-4 border-[var(--mks-ink)] bg-white/95 p-2 text-[var(--mks-ink)] shadow-[3px_3px_0_0_var(--mks-ink)] hover:bg-[var(--mks-yellow)]"
             >
               <ChevronRight className="h-5 w-5" strokeWidth={2.5} />
             </button>

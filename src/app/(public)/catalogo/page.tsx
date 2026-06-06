@@ -2,6 +2,10 @@ import { Suspense } from "react";
 
 import { getCatalogPageDataCached } from "@/infrastructure/supabase/queries/catalog";
 import { CatalogView } from "@/presentation/components/catalog/catalog-view";
+import {
+  enrichProductsWithDisplayPrice,
+  resolveMarketPricingContext,
+} from "@/shared/lib/money/resolve-market-pricing";
 
 function CatalogViewFallback() {
   return (
@@ -20,11 +24,15 @@ function CatalogViewFallback() {
 }
 
 export default async function CatalogoPage() {
-  const data = await getCatalogPageDataCached();
+  const [data, pricing] = await Promise.all([
+    getCatalogPageDataCached(),
+    resolveMarketPricingContext(),
+  ]);
+  const products = enrichProductsWithDisplayPrice(pricing, data.products);
 
   return (
     <Suspense fallback={<CatalogViewFallback />}>
-      <CatalogView {...data} />
+      <CatalogView {...data} products={products} />
     </Suspense>
   );
 }

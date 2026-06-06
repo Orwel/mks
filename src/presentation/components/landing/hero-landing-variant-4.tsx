@@ -45,7 +45,7 @@ export function LandingHeroVariant4({ heroBanners }: Props) {
               href="/catalogo"
               className={cn(
                 buttonVariants({ size: "lg" }),
-                "h-12 rounded-xl border-4 border-[var(--mks-ink)] bg-[var(--mks-pink)] px-6 text-base font-black text-white shadow-[6px_6px_0_0_var(--mks-ink)] hover:bg-[var(--mks-pink)]/90",
+                "h-12 rounded-xl border-4 border-[var(--mks-ink)] bg-[var(--mks-pink)] px-6 text-base font-black text-white shadow-[6px_6px_0_0_var(--mks-ink)] hover:bg-[var(--mks-yellow)]",
               )}
             >
               Ver catálogo
@@ -54,7 +54,7 @@ export function LandingHeroVariant4({ heroBanners }: Props) {
               href="/login"
               className={cn(
                 buttonVariants({ variant: "outline", size: "lg" }),
-                "h-12 rounded-xl border-4 border-[var(--mks-ink)] bg-white px-6 text-base font-black text-[var(--mks-ink)] shadow-[6px_6px_0_0_var(--mks-cyan)] hover:bg-[var(--mks-cream)]",
+                "h-12 rounded-xl border-4 border-[var(--mks-ink)] bg-white px-6 text-base font-black text-[var(--mks-ink)] shadow-[6px_6px_0_0_var(--mks-cyan)] hover:bg-[var(--mks-yellow)]",
               )}
             >
               Ingresar

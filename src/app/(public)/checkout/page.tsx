@@ -25,8 +25,8 @@ export default async function CheckoutPage() {
         <Suspense fallback={<p className="text-sm text-neutral-600">Cargando…</p>}>
           <CheckoutForm
             marketLabel={market ? `${market.flag_emoji ?? ""} ${market.name}`.trim() : null}
-            paymentProvider={market?.default_payment_provider ?? null}
             orderCurrency={market?.default_currency ?? null}
+            marketLocale={market?.default_locale ?? "es-CO"}
           />
         </Suspense>
       </div>
