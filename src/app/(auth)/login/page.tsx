@@ -13,7 +13,7 @@ export default function LoginPage() {
           Iniciar sesión
         </h1>
         <p className="mt-2 text-sm font-medium text-neutral-600">
-          Accedé a tu cuenta. El panel de administración de la tienda es solo para cuentas con rol
+          Accede a tu cuenta. El panel de administración de la tienda es solo para cuentas con rol
           administrador.
         </p>
       </div>

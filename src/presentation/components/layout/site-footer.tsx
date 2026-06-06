@@ -16,7 +16,7 @@ export function SiteFooter({ settings = {} }: Props) {
   const privacyLabel = settings.privacy_label ?? "Política de privacidad";
 
   return (
-    <footer className="mt-auto border-t-4 border-[var(--mks-ink)] bg-[var(--mks-ink)] px-6 py-14 text-sm text-white/80">
+    <footer className="mt-auto border-t-4 border-[var(--mks-ink)] bg-[var(--mks-ink)] px-6 py-10 text-sm text-white/80 lg:py-14">
       <div className="mx-auto flex max-w-6xl flex-col gap-10 md:flex-row md:justify-between md:gap-12">
         <div className="space-y-4">
           <Image
@@ -28,7 +28,7 @@ export function SiteFooter({ settings = {} }: Props) {
           />
           <p className="max-w-sm text-white/90">{tagline}</p>
         </div>
-        <nav className="flex flex-col gap-3 md:items-end">
+        <nav className="hidden flex-col gap-3 md:flex md:items-end">
           <Link href="/terminos" className="font-bold text-[var(--mks-cyan)] hover:underline">
             {termsLabel}
           </Link>

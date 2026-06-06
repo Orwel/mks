@@ -2,29 +2,60 @@ import { Suspense } from "react";
 
 import type { MarketRow } from "@/infrastructure/supabase/queries/markets";
 import { CatalogExploreNav } from "@/presentation/components/layout/catalog-explore-nav";
+import { SiteBottomNav } from "@/presentation/components/layout/site-bottom-nav";
 import { SiteHeaderShell } from "@/presentation/components/layout/site-header-shell";
+import { SiteMobileMenuDrawer } from "@/presentation/components/layout/site-mobile-menu-drawer";
+import { SiteMobileNavProvider } from "@/presentation/components/layout/site-mobile-nav-context";
+import { SiteMobileNavRouteSync } from "@/presentation/components/layout/site-mobile-nav-route-sync";
 
 type Props = {
   markets?: MarketRow[];
   currentMarketCode?: string | null;
+  accountLinks?: readonly { href: string; label: string }[];
+  showAdminLink?: boolean;
+  /** Oculta la barra inferior (p. ej. auth fullscreen). */
+  hideBottomNav?: boolean;
 };
 
 function ExploreNavFallback() {
   return (
-    <span className="inline-block h-8 w-20 animate-pulse rounded-lg bg-[var(--mks-ink)]/10" aria-hidden />
+    <span className="inline-block h-11 w-full animate-pulse rounded-xl bg-[var(--mks-ink)]/10" aria-hidden />
   );
 }
 
-export function SiteHeader({ markets = [], currentMarketCode = null }: Props) {
+function ExploreNavWithSuspense() {
   return (
-    <SiteHeaderShell
-      markets={markets}
-      currentMarketCode={currentMarketCode}
-      exploreNav={
-        <Suspense fallback={<ExploreNavFallback />}>
-          <CatalogExploreNav />
-        </Suspense>
-      }
-    />
+    <Suspense fallback={<ExploreNavFallback />}>
+      <CatalogExploreNav />
+    </Suspense>
+  );
+}
+
+export function SiteHeader({
+  markets = [],
+  currentMarketCode = null,
+  accountLinks,
+  showAdminLink = false,
+  hideBottomNav = false,
+}: Props) {
+  const exploreNav = <ExploreNavWithSuspense />;
+
+  return (
+    <SiteMobileNavProvider>
+      <SiteMobileNavRouteSync />
+      <SiteHeaderShell
+        markets={markets}
+        currentMarketCode={currentMarketCode}
+        exploreNav={exploreNav}
+      />
+      <SiteMobileMenuDrawer
+        markets={markets}
+        currentMarketCode={currentMarketCode}
+        exploreNav={exploreNav}
+        accountLinks={accountLinks}
+        showAdminLink={showAdminLink}
+      />
+      {hideBottomNav ? null : <SiteBottomNav />}
+    </SiteMobileNavProvider>
   );
 }

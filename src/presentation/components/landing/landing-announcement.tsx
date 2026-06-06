@@ -90,7 +90,7 @@ export function LandingAnnouncement({ announcements }: Props) {
   return (
     <>
       {barAnnouncement ? (
-        <div className="fixed bottom-0 left-0 right-0 z-[60] border-t-4 border-[var(--mks-ink)] bg-[var(--mks-pink)] px-4 py-3 text-center text-sm font-bold text-white shadow-[0_-6px_0_0_var(--mks-ink)]">
+        <div className="fixed bottom-[var(--mks-mobile-nav-h)] left-0 right-0 z-[60] border-t-4 border-[var(--mks-ink)] bg-[var(--mks-pink)] px-4 py-3 text-center text-sm font-bold text-white shadow-[0_-6px_0_0_var(--mks-ink)] lg:bottom-0">
           <span>{barAnnouncement.title}</span>
           {barAnnouncement.cta_url && barAnnouncement.cta_label ? (
             <>
@@ -104,7 +104,7 @@ export function LandingAnnouncement({ announcements }: Props) {
       ) : null}
 
       {toastAnnouncement ? (
-        <div className="pointer-events-none fixed bottom-6 right-4 z-[60] max-w-sm">
+        <div className="pointer-events-none fixed bottom-[calc(var(--mks-mobile-nav-h)+1rem)] right-4 z-[60] max-w-sm lg:bottom-6">
           <div className="pointer-events-auto rounded-xl border-4 border-[var(--mks-ink)] bg-white p-4 shadow-[6px_6px_0_0_var(--mks-ink)]">
             <p className="font-heading text-lg font-black text-[var(--mks-ink)]">{toastAnnouncement.title}</p>
             <p className="mt-2 text-sm text-neutral-700">{toastAnnouncement.body}</p>

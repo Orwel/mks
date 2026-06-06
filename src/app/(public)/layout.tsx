@@ -26,7 +26,7 @@ export default async function PublicLayout({
   const showGate = !marketCode && markets.length > 0;
 
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="mks-mobile-nav-offset flex min-h-screen flex-col">
       <SiteThemeStyle settings={siteSettings} />
       {showGate ? <MarketGateModal markets={markets} /> : null}
       <LandingTicker messages={landing.tickers} />
