@@ -81,6 +81,11 @@ export function ProductDetailInteractive({ product }: Props) {
             currency={selectedVersion.currency}
             availableStock={selectedVersion.available_stock}
             imageUrl={selectedVersion.images[0]?.url ?? null}
+            priceLabel={
+              selectedVersion
+                ? formatMoney(selectedVersion.price, selectedVersion.currency, product.displayLocale)
+                : formatMoney(product.displayPrice, product.displayCurrency, product.displayLocale)
+            }
           />
         ) : null}
       </div>

@@ -1,0 +1,40 @@
+📸 *My Korea Store — Especificaciones de imágenes*
+
+Hola 👋 Para que todo se vea bien en móvil y desktop, prepare las imágenes así:
+
+━━━━━━━━━━━━━━━━━━━━
+🛍️ *FOTOS DE PRODUCTO*
+(catálogo, ficha y destacados)
+
+• Proporción: *cuadrada 1:1*
+• Tamaño ideal: *1200 × 1200 px*
+• Mínimo: *800 × 800 px*
+• Formato: JPG, PNG o WebP
+• Peso máximo: *5 MB* por imagen
+
+💡 Tips:
+- Producto centrado, con espacio alrededor
+- Fondo limpio y buena luz
+- Si hay varias fotos, que todas sean cuadradas
+- La misma foto sirve para catálogo, detalle y destacados
+
+━━━━━━━━━━━━━━━━━━━━
+🎯 *BANNERS DEL INICIO*
+(panel "Ofertas & novedades")
+
+• Proporción: *4:3* (horizontal)
+• Tamaño ideal: *920 × 690 px*
+• Alta calidad: *1840 × 1380 px*
+• Formato: JPG, PNG o WebP
+• Peso máximo: *5 MB*
+
+💡 Tips:
+- Texto importante al centro
+- Buen contraste y nitidez
+
+━━━━━━━━━━━━━━━━━━━━
+✅ *Resumen*
+Productos → 1200×1200 (cuadrado)
+Banners inicio → 920×690 (4:3)
+
+¿Dudas con alguna imagen? Envíenla y la revisamos antes de publicar 😊

@@ -1,5 +1,13 @@
 import { requireAuth } from "@/infrastructure/supabase/auth-session";
+import {
+  getFeaturedActiveOrder,
+  listAccountOrders,
+} from "@/infrastructure/supabase/queries/account-orders";
 import { AccountNotice } from "@/presentation/components/account/account-notice";
+import { AccountCartSummary } from "@/presentation/components/account/account-cart-summary";
+import { AccountFeaturedOrder } from "@/presentation/components/account/account-featured-order";
+import { AccountOrdersPreview } from "@/presentation/components/account/account-orders-preview";
+import { isAdminRole } from "@/core/value-objects/user-role";
 
 export default async function MiCuentaPage({
   searchParams,
@@ -12,6 +20,11 @@ export default async function MiCuentaPage({
   const errorKey = Array.isArray(raw) ? raw[0] : raw;
 
   const { user, profile } = session;
+
+  const [recentOrders, featuredOrder] = await Promise.all([
+    listAccountOrders(user.id, { limit: 5 }),
+    getFeaturedActiveOrder(user.id),
+  ]);
 
   return (
     <div className="space-y-8">
@@ -27,6 +40,8 @@ export default async function MiCuentaPage({
           Mi cuenta
         </h1>
       </div>
+
+      <AccountCartSummary />
 
       <div className="grid gap-6 md:grid-cols-2">
         <div className="rounded-2xl border-4 border-[var(--mks-ink)] bg-white p-6 shadow-[8px_8px_0_0_var(--mks-cyan)]">
@@ -44,22 +59,28 @@ export default async function MiCuentaPage({
               <dt className="text-xs font-bold uppercase tracking-wider text-neutral-500">Teléfono</dt>
               <dd className="mt-1 font-semibold text-[var(--mks-ink)]">{profile.phone || "—"}</dd>
             </div>
-            <div>
-              <dt className="text-xs font-bold uppercase tracking-wider text-neutral-500">Rol</dt>
-              <dd className="mt-1 inline-block rounded-lg border-2 border-[var(--mks-ink)] bg-[var(--mks-pink)]/15 px-2 py-0.5 font-black capitalize text-[var(--mks-ink)]">
-                {profile.role}
-              </dd>
-            </div>
+            {isAdminRole(profile.role) ? (
+              <div>
+                <dt className="text-xs font-bold uppercase tracking-wider text-neutral-500">Rol</dt>
+                <dd className="mt-1 inline-block rounded-lg border-2 border-[var(--mks-ink)] bg-[var(--mks-pink)]/15 px-2 py-0.5 font-black capitalize text-[var(--mks-ink)]">
+                  {profile.role}
+                </dd>
+              </div>
+            ) : null}
           </dl>
         </div>
 
-        <div className="rounded-2xl border-4 border-dashed border-[var(--mks-ink)]/30 bg-white/60 p-6">
-          <h2 className="font-heading text-lg font-black text-[var(--mks-ink)]">Próximamente</h2>
-          <p className="mt-3 text-sm font-medium text-neutral-600">
-            Direcciones guardadas, wishlist y preferencias de notificación llegarán en siguientes
-            sprints.
-          </p>
-        </div>
+        <AccountFeaturedOrder order={featuredOrder} />
+      </div>
+
+      <AccountOrdersPreview orders={recentOrders} />
+
+      <div className="rounded-2xl border-4 border-dashed border-[var(--mks-ink)]/30 bg-white/60 p-6">
+        <h2 className="font-heading text-lg font-black text-[var(--mks-ink)]">Próximamente</h2>
+        <p className="mt-3 text-sm font-medium text-neutral-600">
+          Direcciones guardadas, wishlist y preferencias de notificación llegarán en siguientes
+          sprints.
+        </p>
       </div>
     </div>
   );

@@ -23,7 +23,7 @@ export function VersionPicker({ versions, selectedId, onSelect, displayLocale }:
         <span className="font-bold text-[var(--mks-ink)]">{selected?.name ?? "—"}</span>
       </p>
       <div
-        className="mt-3 flex flex-wrap gap-2"
+        className="-mx-1 mt-3 flex gap-2 overflow-x-auto px-1 pb-1 [-ms-overflow-style:none] [scrollbar-width:none] md:flex-wrap md:overflow-visible [&::-webkit-scrollbar]:hidden"
         role="listbox"
         aria-label="Seleccionar versión"
       >

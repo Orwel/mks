@@ -27,7 +27,7 @@ export function CategoryNav({
 }: Props) {
   const visibleSubs = selectedRoot
     ? subcategories.filter((s) => s.parent_slug === selectedRoot)
-    : subcategories;
+    : [];
 
   if (roots.length === 0 && subcategories.length === 0) return null;
 
@@ -38,7 +38,7 @@ export function CategoryNav({
           <h2 className="mb-3 font-heading text-sm font-black uppercase text-[var(--mks-ink)]">
             Categorías
           </h2>
-          <div className="flex flex-wrap gap-2">
+          <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 [-ms-overflow-style:none] [scrollbar-width:none] md:flex-wrap md:overflow-visible [&::-webkit-scrollbar]:hidden">
             <CategoryChip
               active={!selectedRoot && !selectedSub}
               onClick={() => {
@@ -78,7 +78,7 @@ export function CategoryNav({
               </span>
             ) : null}
           </h2>
-          <div className="flex flex-wrap gap-2">
+          <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 [-ms-overflow-style:none] [scrollbar-width:none] md:flex-wrap md:overflow-visible [&::-webkit-scrollbar]:hidden">
             {selectedRoot ? (
               <CategoryChip
                 active={!selectedSub}

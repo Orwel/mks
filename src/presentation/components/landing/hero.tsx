@@ -34,26 +34,6 @@ export function LandingHero({ heroDestacados = [], hero = {} }: Props) {
   const bgVia = hero.bg_via?.trim() || HERO_DEFAULTS.bg_via;
   const bgTo = hero.bg_to?.trim() || HERO_DEFAULTS.bg_to;
 
-  // #region agent log
-  fetch("http://127.0.0.1:7801/ingest/7171c2d7-123f-4eec-957b-9607ec2a1858", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "1e5e6c" },
-    body: JSON.stringify({
-      sessionId: "1e5e6c",
-      runId: "post-fix",
-      location: "hero.tsx:LandingHero",
-      message: "hero render with settings",
-      data: {
-        receivesHeroSettings: Boolean(hero && Object.keys(hero).length > 0),
-        renderedTitle: title,
-        settingsTitle: hero.title ?? null,
-      },
-      timestamp: Date.now(),
-      hypothesisId: "C",
-    }),
-  }).catch(() => {});
-  // #endregion
-
   return (
     <section
       className="relative overflow-hidden border-b-4 border-[var(--mks-ink)]"
@@ -64,8 +44,8 @@ export function LandingHero({ heroDestacados = [], hero = {} }: Props) {
       <div className="pointer-events-none absolute -right-20 -top-20 h-64 w-64 rounded-full bg-[var(--mks-pink)]/25 blur-3xl" />
       <div className="pointer-events-none absolute -bottom-24 -left-16 h-72 w-72 rounded-full bg-[var(--mks-cyan)]/30 blur-3xl" />
 
-      <div className="relative mx-auto grid w-full max-w-[88rem] items-center gap-10 px-5 py-16 sm:px-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.08fr)] lg:gap-14 lg:py-28 lg:pl-6 lg:pr-10 xl:gap-16 xl:pl-8 xl:pr-12 2xl:pl-10">
-        <div className="w-full max-w-2xl justify-self-start space-y-8 sm:max-w-3xl lg:max-w-none">
+      <div className="relative mx-auto grid w-full max-w-[88rem] items-center gap-8 px-4 py-10 sm:px-6 sm:py-16 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.08fr)] lg:gap-14 lg:py-28 lg:pl-6 lg:pr-10 xl:gap-16 xl:pl-8 xl:pr-12 2xl:pl-10">
+        <div className="w-full max-w-2xl justify-self-start space-y-6 sm:space-y-8 sm:max-w-3xl lg:max-w-none">
           <div className="inline-flex rotate-[-2deg] items-center gap-2 rounded-full border-4 border-[var(--mks-ink)] bg-[var(--mks-cyan)] px-4 py-2 text-xs font-black uppercase tracking-widest text-[var(--mks-ink)] shadow-[4px_4px_0_0_var(--mks-ink)]">
             {badge}
           </div>
@@ -82,12 +62,12 @@ export function LandingHero({ heroDestacados = [], hero = {} }: Props) {
             </p>
           </div>
 
-          <div className="flex flex-wrap gap-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:gap-4">
             <Link
               href="/catalogo"
               className={cn(
                 buttonVariants({ size: "lg" }),
-                "h-12 rounded-xl border-4 border-[var(--mks-ink)] bg-[var(--mks-pink)] px-6 text-base font-black text-white shadow-[6px_6px_0_0_var(--mks-ink)] transition [a]:hover:bg-[var(--mks-yellow)] [a]:hover:text-[var(--mks-ink)]",
+                "h-12 w-full rounded-xl border-4 border-[var(--mks-ink)] bg-[var(--mks-pink)] px-6 text-base font-black text-white shadow-[6px_6px_0_0_var(--mks-ink)] transition sm:w-auto [a]:hover:bg-[var(--mks-yellow)] [a]:hover:text-[var(--mks-ink)]",
               )}
             >
               {ctaCatalog}
@@ -96,7 +76,7 @@ export function LandingHero({ heroDestacados = [], hero = {} }: Props) {
               href="/login"
               className={cn(
                 buttonVariants({ variant: "outline", size: "lg" }),
-                "h-12 rounded-xl border-4 border-[var(--mks-ink)] bg-white px-6 text-base font-black text-[var(--mks-ink)] shadow-[6px_6px_0_0_var(--mks-cyan)] hover:bg-[var(--mks-yellow)]",
+                "h-12 w-full rounded-xl border-4 border-[var(--mks-ink)] bg-white px-6 text-base font-black text-[var(--mks-ink)] shadow-[6px_6px_0_0_var(--mks-cyan)] hover:bg-[var(--mks-yellow)] sm:w-auto",
               )}
             >
               {ctaLogin}

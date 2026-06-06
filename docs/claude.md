@@ -1,11 +1,11 @@
 # Guía para Claude (Anthropic)
 
-Contexto del proyecto: **My Korea Store** — catálogo, carrito, checkout dual (Stripe + Mercado Pago), roles `customer` / `employee` / `admin`, legal versionado (Colombia), reservas de stock (`reserve_stock`).
+Contexto del proyecto: **My Korea Store** — catálogo multi-mercado, versiones de producto, carrito, checkout con **Mercado Pago**, roles `customer` / `employee` / `admin`, legal versionado (Colombia), reservas de stock por versión y mercado.
 
 ## Prioridades al implementar
 
 1. **Seguridad**: RLS en Postgres; webhooks con verificación de firma e idempotencia (`webhook_events`); nunca filtrar service role al navegador.
-2. **Coherencia**: mantener tipos y enums alineados entre `src/core/value-objects` y migraciones SQL (`order_status`, etc.).
+2. **Coherencia**: tipos y enums alineados entre `src/core/value-objects` y migraciones SQL; stock/precio en `product_version_market_stock`, no en `products`.
 3. **UX legal**: checkbox de T&C y privacidad enlazados a versiones concretas; persistir `legal_acceptances` y referencia en `orders`.
 
 ## Estilo de respuesta
@@ -17,6 +17,7 @@ Contexto del proyecto: **My Korea Store** — catálogo, carrito, checkout dual 
 
 | Tema | Archivo / carpeta |
 | --- | --- |
+| Manual operativo | `docs/manual-usuario/` |
 | Spec funcional | `docs/spec.md` |
 | Esquema y RLS | `docs/database.md`, `supabase/migrations/` |
 | Convenciones de capas | `docs/architecture.md` |
@@ -30,4 +31,5 @@ Los esqueletos viven en `supabase/functions/`. Si la lógica vive en Next (`/api
 
 - [ ] Transiciones de estado de pedido acotadas (sin saltos inválidos).
 - [ ] Montos y moneda persistidos como snapshot en `orders` cuando aplique.
+- [ ] Stock descontado por `version_id` + `market_code` al confirmar pago.
 - [ ] Pruebas manuales o automatizadas descritas en el PR o en comentario de issue.

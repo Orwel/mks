@@ -1,6 +1,6 @@
 # Guía para agentes (Cursor / Composer)
 
-Este repositorio es **My Korea Store (MKS)**: e-commerce con **Next.js 16 (App Router)**, **Supabase**, **Stripe** y **Mercado Pago**.
+Este repositorio es **My Korea Store (MKS)**: e-commerce con **Next.js 16 (App Router)**, **Supabase** y **Mercado Pago** (mercados CO/MX/PE/EC).
 
 ## Reglas de trabajo
 
@@ -9,7 +9,8 @@ Este repositorio es **My Korea Store (MKS)**: e-commerce con **Next.js 16 (App R
 - No exponer `SUPABASE_SERVICE_ROLE_KEY` ni secretos de pago en el cliente; solo en servidor (Route Handlers, Server Actions, Edge Functions).
 - Respetar **RLS** de Supabase: la app cliente usa anon + JWT; operaciones sensibles con `createSupabaseAdminClient()` solo en servidor.
 - Cambios de esquema solo vía **`supabase/migrations/`** (no editar la BD remota a mano sin migración).
-- Imágenes de producto: bucket **`product-images`** (ver `docs/database.md`).
+- Catálogo: **productos por mercado** (`/mercados/[code]/productos`); stock/precio en `product_version_market_stock`; imágenes en `product_version_images` → bucket **`product-images`**.
+- Manual operativo: **`docs/manual-usuario/`**.
 - Antes de ampliar el modelo de datos, actualizar **`docs/spec.md`**, **`docs/database.md`** y un **ADR** en `docs/adr/` si la decisión es relevante.
 
 ## Rutas útiles
@@ -32,5 +33,6 @@ Este repositorio es **My Korea Store (MKS)**: e-commerce con **Next.js 16 (App R
 ## Referencias
 
 - [README de documentación](./README.md)
+- [Manual de administración](./manual-usuario/manual-administracion.md)
 - [Especificación](./spec.md)
 - [Arquitectura](./architecture.md)

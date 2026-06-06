@@ -5,6 +5,7 @@ import { useState } from "react";
 
 import { reserveCartLine } from "@/app/(public)/carrito/actions";
 import { useCartStore } from "@/presentation/stores/cart-store";
+import { mksButtonClass } from "@/presentation/components/ui/mks-button";
 
 type Props = {
   productId: string;
@@ -16,6 +17,7 @@ type Props = {
   currency: string;
   availableStock: number;
   imageUrl?: string | null;
+  priceLabel?: string;
 };
 
 function reserveErrorMessage(code: string): string {
@@ -39,6 +41,7 @@ export function ProductDetailActions({
   currency,
   availableStock,
   imageUrl,
+  priceLabel,
 }: Props) {
   const upsertLine = useCartStore((s) => s.upsertLine);
   const lines = useCartStore((s) => s.lines);
@@ -83,72 +86,102 @@ export function ProductDetailActions({
     setQuantity(1);
   };
 
+  const addButton = (
+    <button
+      type="button"
+      disabled={disabled}
+      onClick={() => void onAdd()}
+      className={mksButtonClass({
+        variant: "primary",
+        size: "md",
+        className: "w-full lg:w-auto",
+      })}
+    >
+      {loading ? "…" : inStock ? "Añadir al carrito" : "Agotado"}
+    </button>
+  );
+
   return (
-    <div className="mt-8 space-y-3">
-      {inStock ? (
-        <div className="flex flex-wrap items-end gap-4">
-          <label className="block">
-            <span className="text-xs font-black uppercase tracking-wide text-neutral-600">
-              Cantidad
-            </span>
-            <div className="mt-2 flex items-center gap-2">
-              <button
-                type="button"
-                disabled={disabled || quantity <= 1}
-                onClick={() => setQuantity((q) => clampQuantity(q - 1))}
-                className="flex h-11 w-11 items-center justify-center rounded-lg border-4 border-[var(--mks-ink)] bg-white text-lg font-black text-[var(--mks-ink)] shadow-[3px_3px_0_0_var(--mks-ink)] transition enabled:hover:bg-[var(--mks-yellow)] disabled:cursor-not-allowed disabled:opacity-40"
-                aria-label="Menos"
-              >
-                −
-              </button>
-              <input
-                type="number"
-                min={1}
-                max={maxAdd}
-                value={quantity}
-                disabled={disabled}
-                onChange={(e) => setQuantity(clampQuantity(Number(e.target.value) || 1))}
-                className="h-11 w-16 rounded-lg border-4 border-[var(--mks-ink)] bg-white text-center text-sm font-black text-[var(--mks-ink)] shadow-[3px_3px_0_0_var(--mks-cyan)] outline-none focus:border-[var(--mks-pink)]"
-                aria-label="Cantidad a añadir"
-              />
-              <button
-                type="button"
-                disabled={disabled || quantity >= maxAdd}
-                onClick={() => setQuantity((q) => clampQuantity(q + 1))}
-                className="flex h-11 w-11 items-center justify-center rounded-lg border-4 border-[var(--mks-ink)] bg-white text-lg font-black text-[var(--mks-ink)] shadow-[3px_3px_0_0_var(--mks-ink)] transition enabled:hover:bg-[var(--mks-yellow)] disabled:cursor-not-allowed disabled:opacity-40"
-                aria-label="Más"
-              >
-                +
-              </button>
-            </div>
-          </label>
-          {cartQty > 0 ? (
-            <p className="pb-2 text-xs font-bold text-neutral-600">
-              {cartQty} en tu carrito · puedes añadir hasta {maxAdd} más
+    <>
+      <div className="mt-8 space-y-3 pb-24 lg:pb-0">
+        {inStock ? (
+          <div className="flex flex-wrap items-end gap-4">
+            <label className="block">
+              <span className="text-xs font-black uppercase tracking-wide text-neutral-600">
+                Cantidad
+              </span>
+              <div className="mt-2 flex items-center gap-2">
+                <button
+                  type="button"
+                  disabled={disabled || quantity <= 1}
+                  onClick={() => setQuantity((q) => clampQuantity(q - 1))}
+                  className="flex h-11 w-11 items-center justify-center rounded-lg border-4 border-[var(--mks-ink)] bg-white text-lg font-black text-[var(--mks-ink)] shadow-[3px_3px_0_0_var(--mks-ink)] transition enabled:hover:bg-[var(--mks-yellow)] disabled:cursor-not-allowed disabled:opacity-40"
+                  aria-label="Menos"
+                >
+                  −
+                </button>
+                <input
+                  type="number"
+                  min={1}
+                  max={maxAdd}
+                  value={quantity}
+                  disabled={disabled}
+                  onChange={(e) => setQuantity(clampQuantity(Number(e.target.value) || 1))}
+                  className="h-11 w-16 rounded-lg border-4 border-[var(--mks-ink)] bg-white text-center text-sm font-black text-[var(--mks-ink)] shadow-[3px_3px_0_0_var(--mks-cyan)] outline-none focus:border-[var(--mks-pink)]"
+                  aria-label="Cantidad a añadir"
+                />
+                <button
+                  type="button"
+                  disabled={disabled || quantity >= maxAdd}
+                  onClick={() => setQuantity((q) => clampQuantity(q + 1))}
+                  className="flex h-11 w-11 items-center justify-center rounded-lg border-4 border-[var(--mks-ink)] bg-white text-lg font-black text-[var(--mks-ink)] shadow-[3px_3px_0_0_var(--mks-ink)] transition enabled:hover:bg-[var(--mks-yellow)] disabled:cursor-not-allowed disabled:opacity-40"
+                  aria-label="Más"
+                >
+                  +
+                </button>
+              </div>
+            </label>
+            {cartQty > 0 ? (
+              <p className="pb-2 text-xs font-bold text-neutral-600">
+                {cartQty} en tu carrito · puedes añadir hasta {maxAdd} más
+              </p>
+            ) : null}
+          </div>
+        ) : null}
+
+        <div className="hidden lg:block">{addButton}</div>
+
+        {error ? (
+          <p className="text-center text-sm font-bold text-[var(--mks-pink)]">{error}</p>
+        ) : null}
+
+        <Link
+          href="/carrito"
+          className={mksButtonClass({
+            variant: "outline",
+            size: "md",
+            className: "hidden w-full lg:block",
+          })}
+        >
+          Ver carrito
+        </Link>
+      </div>
+
+      <div className="fixed inset-x-0 bottom-0 z-40 border-t-4 border-[var(--mks-ink)] bg-[var(--mks-cream)]/95 p-4 pb-safe backdrop-blur-md lg:hidden">
+        <div className="mx-auto flex max-w-6xl items-center gap-3">
+          {priceLabel ? (
+            <p className="shrink-0 font-heading text-lg font-black text-[var(--mks-pink)]">
+              {priceLabel}
             </p>
           ) : null}
+          <div className="min-w-0 flex-1">{addButton}</div>
         </div>
-      ) : null}
-
-      <button
-        type="button"
-        disabled={disabled}
-        onClick={() => void onAdd()}
-        className="w-full rounded-xl border-4 border-[var(--mks-ink)] bg-[var(--mks-cyan)] py-4 text-center text-sm font-black uppercase text-[var(--mks-ink)] shadow-[6px_6px_0_0_var(--mks-ink)] transition enabled:hover:bg-[var(--mks-yellow)] enabled:hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-50"
-      >
-        {loading ? "…" : inStock ? "Añadir al carrito" : "Agotado"}
-      </button>
-
-      {error ? (
-        <p className="text-center text-sm font-bold text-[var(--mks-pink)]">{error}</p>
-      ) : null}
-
-      <Link
-        href="/carrito"
-        className="block w-full rounded-xl border-4 border-[var(--mks-ink)] bg-white py-3 text-center text-sm font-black uppercase text-[var(--mks-ink)] shadow-[4px_4px_0_0_var(--mks-ink)] transition hover:bg-[var(--mks-yellow)] hover:-translate-y-0.5"
-      >
-        Ver carrito
-      </Link>
-    </div>
+        {error ? (
+          <p className="mx-auto mt-2 max-w-6xl text-center text-xs font-bold text-[var(--mks-pink)]">
+            {error}
+          </p>
+        ) : null}
+      </div>
+    </>
   );
 }

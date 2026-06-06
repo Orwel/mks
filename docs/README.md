@@ -2,6 +2,12 @@
 
 Índice central del proyecto. El código vive en la raíz del repo; aquí está la guía humana y para asistentes de IA.
 
+## Manual de usuario (operación)
+
+- [**Manual de administración**](./manual-usuario/manual-administracion.md) — panel: mercados, productos, pedidos, marketing.
+- [**Sitio público**](./manual-usuario/sitio-publico.md) — rutas de la tienda y flujo de compra.
+- [**Especificaciones de imágenes (WhatsApp)**](./manual-usuario/whatsapp-especificaciones-imagenes.txt) — texto para enviar al cliente.
+
 ## Para agentes de IA
 
 - [**agents.md**](./agents.md) — Cursor / Composer: capas, seguridad, rutas, calidad.
@@ -23,7 +29,7 @@
 
 ## Proyecto (resumen operativo)
 
-E-commerce con **Next.js 16**, **Supabase**, **Stripe** y **Mercado Pago**.
+E-commerce con **Next.js 16**, **Supabase** y **Mercado Pago** (multi-mercado: CO, MX, PE, EC).
 
 ### Requisitos
 
@@ -40,7 +46,7 @@ npm install
 npm run dev
 ```
 
-Abre [http://localhost:3000](http://localhost:3000).
+Abre [http://localhost:3000](http://localhost:3000) (o el puerto que indique el terminal).
 
 ### Scripts
 

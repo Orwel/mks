@@ -10,6 +10,11 @@ import {
 } from "@/infrastructure/supabase/queries/markets";
 import { currencyMetaFromRow } from "@/shared/lib/money/currency-meta";
 import { convertAmount, roundForCurrency } from "@/shared/lib/money/convert-amount";
+import {
+  buildShippingAddress,
+  validateShippingAddressInput,
+  type ShippingAddressInput,
+} from "@/shared/types/shipping-address";
 
 export type CheckoutLineInput = {
   productId: string;
@@ -32,6 +37,7 @@ export async function createOrderAndPayment(input: {
   customerName: string;
   customerEmail: string;
   customerPhone?: string;
+  shippingAddress: ShippingAddressInput;
   acceptLegal: boolean;
 }): Promise<CreateCheckoutResult> {
   if (!input.acceptLegal) {
@@ -39,6 +45,11 @@ export async function createOrderAndPayment(input: {
   }
   if (input.lines.length === 0) {
     return { ok: false, error: "El carrito está vacío." };
+  }
+
+  const addressValidation = validateShippingAddressInput(input.shippingAddress);
+  if (!addressValidation.ok) {
+    return { ok: false, error: addressValidation.error };
   }
 
   const marketCode = await getMarketCodeFromCookies();
@@ -50,6 +61,12 @@ export async function createOrderAndPayment(input: {
   if (!market) {
     return { ok: false, error: "Mercado no válido." };
   }
+
+  const shippingAddress = buildShippingAddress(
+    marketCode,
+    market.name,
+    addressValidation.data,
+  );
 
   if (!isMercadoPagoConfigured()) {
     return { ok: false, error: "Mercado Pago no está configurado en el servidor." };
@@ -210,6 +227,8 @@ export async function createOrderAndPayment(input: {
       customer_name: input.customerName.trim(),
       customer_email: input.customerEmail.trim(),
       customer_phone: input.customerPhone?.trim() || null,
+      shipping_address: shippingAddress,
+      notes: shippingAddress.notes ?? null,
       legal_acceptance_id: acceptance.id,
     })
     .select("id")

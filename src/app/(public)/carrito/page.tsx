@@ -8,8 +8,7 @@ export default function CarritoPage() {
         Carrito
       </h1>
       <p className="mt-2 text-sm font-medium text-neutral-600">
-        Cada línea dispara una reserva atómica en la base de datos (RPC <code className="font-mono text-xs">reserve_stock</code>
-        ). Si abandonas el carrito, el stock se libera al vencer el TTL o con la limpieza programada.
+        Revisa tus productos antes de pagar. El stock queda reservado mientras completes tu compra.
       </p>
       <div className="mt-10">
         <CartView />

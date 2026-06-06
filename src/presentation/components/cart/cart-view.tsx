@@ -127,7 +127,7 @@ export function CartView() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-24 lg:pb-0">
       {message ? (
         <div
           className="rounded-xl border-4 border-[var(--mks-pink)] bg-[var(--mks-pink)]/10 px-4 py-3 text-sm font-bold text-[var(--mks-ink)]"
@@ -187,7 +187,7 @@ export function CartView() {
         ))}
       </ul>
 
-      <div className="rounded-xl border-4 border-dashed border-[var(--mks-ink)] bg-[var(--mks-cream)] p-6 space-y-4">
+      <div className="rounded-xl border-4 border-dashed border-[var(--mks-ink)] bg-[var(--mks-cream)] p-6 pb-28 space-y-4 lg:pb-6">
         <p className="text-sm text-neutral-600">
           Subtotal referencial:{" "}
           <span className="font-black text-[var(--mks-ink)]">{formatMoney(subtotal, lines[0]?.currency ?? "COP")}</span>
@@ -195,10 +195,24 @@ export function CartView() {
         </p>
         <Link
           href="/checkout"
-          className="inline-flex items-center justify-center rounded-xl border-4 border-[var(--mks-ink)] bg-[var(--mks-pink)] px-6 py-3 text-sm font-black uppercase tracking-wide text-[var(--mks-ink)] shadow-[4px_4px_0_0_var(--mks-ink)] transition hover:bg-[var(--mks-yellow)] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none"
+          className="hidden items-center justify-center rounded-xl border-4 border-[var(--mks-ink)] bg-[var(--mks-pink)] px-6 py-3 text-sm font-black uppercase tracking-wide text-[var(--mks-ink)] shadow-[4px_4px_0_0_var(--mks-ink)] transition hover:bg-[var(--mks-yellow)] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none lg:inline-flex"
         >
           Ir al checkout
         </Link>
+      </div>
+
+      <div className="fixed inset-x-0 bottom-0 z-40 border-t-4 border-[var(--mks-ink)] bg-[var(--mks-cream)]/95 p-4 pb-safe backdrop-blur-md lg:hidden">
+        <div className="mx-auto flex max-w-3xl items-center justify-between gap-3">
+          <p className="text-sm font-black text-[var(--mks-ink)]">
+            {formatMoney(subtotal, lines[0]?.currency ?? "COP")}
+          </p>
+          <Link
+            href="/checkout"
+            className="inline-flex min-h-11 flex-1 items-center justify-center rounded-xl border-4 border-[var(--mks-ink)] bg-[var(--mks-pink)] px-4 py-2.5 text-sm font-black uppercase tracking-wide text-[var(--mks-ink)] shadow-[4px_4px_0_0_var(--mks-ink)]"
+          >
+            Ir al checkout
+          </Link>
+        </div>
       </div>
     </div>
   );

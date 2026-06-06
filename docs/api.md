@@ -20,11 +20,44 @@ Ver `supabase/functions/README.md`.
 | `createSupabaseServerClient()` | Server Components / acciones (cookies) |
 | `createSupabaseAdminClient()` | Solo servidor; `SUPABASE_SERVICE_ROLE_KEY` |
 
+## RPC de stock (Postgres)
+
+Firma actual (post `20250605100000_product_versions.sql`):
+
+```sql
+reserve_stock(
+  p_version_id uuid,
+  p_market_code text,
+  p_quantity int,
+  p_cart_id text,
+  p_user_id uuid default null,
+  p_ttl_minutes int default 15
+) → jsonb
+
+release_stock_reservation(
+  p_cart_id text,
+  p_version_id uuid,
+  p_market_code text
+) → jsonb
+
+fulfill_order_payment(p_order_id uuid) → jsonb
+```
+
+El carrito invoca reserva/liberación vía Server Actions en `src/app/(public)/carrito/actions.ts`.
+
 ## Variables de entorno
 
 Ver `.env.example` en la raíz del repo.
 
-## Próximos contratos
+## Server Actions (panel)
 
-- **Server Actions**: `checkout`, `createOrder`, `adminUpdateOrderStatus`, CRUD productos (validación con zod).
-- **RPC / SQL**: consumo de reservas al confirmar pago (transacción con actualización de `products.stock`).
+CRUD principal en:
+
+- `src/app/(dashboard)/mercados/[code]/productos/actions.ts` — productos y versiones por mercado
+- `src/app/(dashboard)/mercados/actions.ts` — mercados
+- `src/app/(dashboard)/destacados/actions.ts` — banners hero
+- `src/app/(dashboard)/categorias/actions.ts` — categorías
+- `src/app/(public)/checkout/actions.ts` — checkout
+- `src/app/(public)/contactanos/actions.ts` — formulario de contacto
+
+Validación con zod donde aplique en cada módulo.

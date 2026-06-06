@@ -173,11 +173,11 @@ function CategorySection({
 
 function ProductCarousel({ items }: { items: FeaturedProduct[] }) {
   return (
-    <div className="flex gap-4 overflow-x-auto pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+    <div className="relative flex gap-4 overflow-x-auto pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
       {items.map((p) => (
         <div
           key={p.id}
-          className="group w-[220px] shrink-0 overflow-hidden rounded-xl border-4 border-[var(--mks-ink)] bg-[var(--mks-cream)] shadow-[6px_6px_0_0_var(--mks-ink)] transition-transform hover:-translate-y-1"
+          className="group w-[min(72vw,220px)] shrink-0 overflow-hidden rounded-xl border-4 border-[var(--mks-ink)] bg-[var(--mks-cream)] shadow-[6px_6px_0_0_var(--mks-ink)] transition-transform hover:-translate-y-1"
         >
           <Link href={`/catalogo/${p.slug}`} className="block">
             <div className="relative aspect-square w-full overflow-hidden bg-gradient-to-br from-[var(--mks-pink)]/30 to-[var(--mks-cyan)]/40">

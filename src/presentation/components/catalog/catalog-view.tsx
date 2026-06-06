@@ -27,6 +27,7 @@ import {
 } from "@/presentation/components/catalog/catalog-filter-utils";
 import { formatMoney } from "@/shared/lib/format-money";
 import { cn } from "@/lib/utils";
+import { MksDrawer } from "@/presentation/components/ui/mks-drawer";
 
 type Props = Omit<CatalogPageData, "products"> & {
   products: ProductWithDisplayPrice<CatalogProduct>[];
@@ -96,6 +97,19 @@ export function CatalogView({
 
   const displayCurrency = products[0]?.displayCurrency ?? products[0]?.currency ?? "COP";
 
+  const filtersPanel = (
+    <FiltersPanel
+      filters={filters}
+      priceRange={priceRange}
+      displayCurrency={displayCurrency}
+      metadataFacets={metadataFacets}
+      onPatch={patch}
+      onToggleMetadata={toggleMetadata}
+      onClear={clearFilters}
+      activeFilterCount={activeFilterCount}
+    />
+  );
+
   const filterLabel = useMemo(() => {
     if (filters.subcategoria) {
       return subcategories.find((s) => s.slug === filters.subcategoria)?.name ?? filters.subcategoria;
@@ -155,31 +169,26 @@ export function CatalogView({
           </div>
           <button
             type="button"
-            onClick={() => setMobileFiltersOpen((o) => !o)}
+            onClick={() => setMobileFiltersOpen(true)}
             className="rounded-xl border-4 border-[var(--mks-ink)] bg-[var(--mks-cream)] px-4 py-2.5 text-sm font-black text-[var(--mks-ink)] shadow-[4px_4px_0_0_var(--mks-ink)] lg:hidden"
           >
             Filtros{activeFilterCount > 0 ? ` (${activeFilterCount})` : ""}
           </button>
         </div>
 
+        <MksDrawer
+          open={mobileFiltersOpen}
+          onClose={() => setMobileFiltersOpen(false)}
+          id="catalog-filters-drawer"
+          title="Filtros"
+          eyebrow="Catálogo"
+          side="right"
+        >
+          {filtersPanel}
+        </MksDrawer>
+
         <div className="flex gap-8">
-          <aside
-            className={cn(
-              "w-full shrink-0 space-y-6 lg:block lg:w-64",
-              mobileFiltersOpen ? "block" : "hidden",
-            )}
-          >
-            <FiltersPanel
-              filters={filters}
-              priceRange={priceRange}
-              displayCurrency={displayCurrency}
-              metadataFacets={metadataFacets}
-              onPatch={patch}
-              onToggleMetadata={toggleMetadata}
-              onClear={clearFilters}
-              activeFilterCount={activeFilterCount}
-            />
-          </aside>
+          <aside className="hidden w-64 shrink-0 lg:block">{filtersPanel}</aside>
 
           <div className="min-w-0 flex-1">
             <div className="mb-4 flex flex-wrap items-center justify-between gap-2 text-sm">

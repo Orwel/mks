@@ -3,6 +3,10 @@ import { notFound } from "next/navigation";
 
 import { createSupabaseServerClient } from "@/infrastructure/supabase/server";
 import { DashboardPageHeader } from "@/presentation/components/layout/dashboard-page-header";
+import {
+  formatShippingAddress,
+  type ShippingAddress,
+} from "@/shared/types/shipping-address";
 
 import { updateOrderStatusForm } from "../actions";
 
@@ -26,7 +30,7 @@ export default async function DashboardPedidoDetailPage({ params }: PageProps) {
   const { data: order, error: oErr } = await supabase
     .from("orders")
     .select(
-      "id, order_number, status, subtotal, shipping, discount, total, currency, customer_name, customer_email, customer_phone, notes, created_at",
+      "id, order_number, status, subtotal, shipping, discount, total, currency, customer_name, customer_email, customer_phone, shipping_address, notes, created_at",
     )
     .eq("id", orderId)
     .maybeSingle();
@@ -46,6 +50,8 @@ export default async function DashboardPedidoDetailPage({ params }: PageProps) {
     .select("from_status, to_status, reason, created_at")
     .eq("order_id", orderId)
     .order("created_at", { ascending: false });
+
+  const shippingAddress = order.shipping_address as ShippingAddress | null;
 
   return (
     <div className="space-y-8">
@@ -98,7 +104,16 @@ export default async function DashboardPedidoDetailPage({ params }: PageProps) {
             <dd>{order.customer_phone ?? "—"}</dd>
           </div>
           <div className="md:col-span-2">
-            <dt className="text-xs font-bold uppercase text-neutral-500">Notas</dt>
+            <dt className="text-xs font-bold uppercase text-neutral-500">Dirección de envío</dt>
+            <dd>{shippingAddress ? formatShippingAddress(shippingAddress) : "—"}</dd>
+            {shippingAddress?.notes ? (
+              <p className="mt-1 text-xs text-neutral-600">
+                <span className="font-bold">Anotaciones:</span> {shippingAddress.notes}
+              </p>
+            ) : null}
+          </div>
+          <div className="md:col-span-2">
+            <dt className="text-xs font-bold uppercase text-neutral-500">Notas del pedido</dt>
             <dd>{order.notes ?? "—"}</dd>
           </div>
         </dl>
