@@ -11,6 +11,11 @@ import {
 } from "@/application/checkout/fulfill-paid-order";
 import { getServerEnv } from "@/shared/config/env";
 
+/** MP firma solo con el query param `data.id` (no `id` legacy). */
+function signatureDataIdFromUrl(url: URL): string | null {
+  return url.searchParams.get("data.id");
+}
+
 function paymentIdFromUrl(url: URL): string | null {
   return (
     url.searchParams.get("data.id") ??
@@ -24,22 +29,29 @@ function paymentIdFromBody(body: { data?: { id?: string | number } }): string | 
   return id != null ? String(id) : null;
 }
 
-function verifySignature(request: Request, dataId: string | null): boolean {
+function verifySignature(request: Request, signatureDataId: string | null): boolean {
   const { MP_WEBHOOK_SECRET } = getServerEnv();
   if (!MP_WEBHOOK_SECRET) return true;
   if (!request.headers.get("x-signature")) return true;
-  if (!dataId) return false;
 
   try {
     WebhookSignatureValidator.validate({
       xSignature: request.headers.get("x-signature"),
       xRequestId: request.headers.get("x-request-id"),
-      dataId,
+      dataId: signatureDataId ?? undefined,
       secret: MP_WEBHOOK_SECRET,
     });
     return true;
   } catch (e) {
-    if (e instanceof InvalidWebhookSignatureError) return false;
+    if (e instanceof InvalidWebhookSignatureError) {
+      console.error(
+        "[mercadopago webhook] firma inválida:",
+        e.reason,
+        "requestId=",
+        e.requestId ?? "(sin x-request-id)",
+      );
+      return false;
+    }
     throw e;
   }
 }
@@ -79,7 +91,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ received: true, ignored: true });
   }
 
-  if (!verifySignature(request, paymentId)) {
+  if (!verifySignature(request, signatureDataIdFromUrl(url))) {
     return NextResponse.json({ error: "Firma inválida." }, { status: 401 });
   }
 
@@ -97,18 +109,24 @@ export async function POST(request: Request) {
   }
 
   const url = new URL(request.url);
+
+  if (url.searchParams.get("topic") === "merchant_order") {
+    return NextResponse.json({ received: true, ignored: true });
+  }
+
   const body = (await request.json()) as {
     action?: string;
     type?: string;
     data?: { id?: string | number };
   };
 
-  const paymentId = paymentIdFromUrl(url) ?? paymentIdFromBody(body);
+  const signatureDataId = signatureDataIdFromUrl(url);
+  const paymentId = signatureDataId ?? paymentIdFromUrl(url) ?? paymentIdFromBody(body);
   if (!paymentId) {
     return NextResponse.json({ received: true, ignored: true });
   }
 
-  if (!verifySignature(request, paymentId)) {
+  if (!verifySignature(request, signatureDataId)) {
     return NextResponse.json({ error: "Firma inválida." }, { status: 401 });
   }
 

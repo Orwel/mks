@@ -4,6 +4,7 @@ const clientEnvSchema = z.object({
   NEXT_PUBLIC_SITE_URL: z.string().url().optional(),
   NEXT_PUBLIC_SUPABASE_URL: z.string().url().optional(),
   NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(1).optional(),
+  NEXT_PUBLIC_MP_PUBLIC_KEY: z.string().min(1).optional(),
   NEXT_PUBLIC_DEFAULT_CURRENCY: z.string().length(3).default("COP"),
 });
 
@@ -27,6 +28,7 @@ function pickClientEnv(): z.input<typeof clientEnvSchema> {
     NEXT_PUBLIC_SITE_URL: str(process.env.NEXT_PUBLIC_SITE_URL),
     NEXT_PUBLIC_SUPABASE_URL: str(process.env.NEXT_PUBLIC_SUPABASE_URL),
     NEXT_PUBLIC_SUPABASE_ANON_KEY: str(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY),
+    NEXT_PUBLIC_MP_PUBLIC_KEY: str(process.env.NEXT_PUBLIC_MP_PUBLIC_KEY),
     NEXT_PUBLIC_DEFAULT_CURRENCY:
       str(process.env.NEXT_PUBLIC_DEFAULT_CURRENCY) ?? "COP",
   };

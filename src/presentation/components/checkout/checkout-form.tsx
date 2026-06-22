@@ -12,6 +12,8 @@ import { useEffect, useMemo, useState } from "react";
 
 import { startCheckout } from "@/app/(public)/checkout/actions";
 
+import { initMercadoPagoCheckout } from "@/presentation/lib/mercadopago-browser";
+
 import { formatMoney } from "@/shared/lib/format-money";
 
 import { useCartStore } from "@/presentation/stores/cart-store";
@@ -67,6 +69,10 @@ export function CheckoutForm({ marketLabel, orderCurrency, marketLocale }: Props
     return useCartStore.persist.onFinishHydration(() => setHydrated(true));
 
   }, [hydrated]);
+
+  useEffect(() => {
+    void initMercadoPagoCheckout(marketLocale);
+  }, [marketLocale]);
 
 
 
