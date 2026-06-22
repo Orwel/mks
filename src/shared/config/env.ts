@@ -11,6 +11,7 @@ const serverEnvSchema = clientEnvSchema.extend({
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1).optional(),
   MP_ACCESS_TOKEN: z.string().optional(),
   MP_WEBHOOK_SECRET: z.string().optional(),
+  MP_TEST_PAYER_EMAIL: z.string().email().optional(),
   RESEND_API_KEY: z.string().optional(),
   RESEND_FROM_EMAIL: z.string().email().optional(),
 });
@@ -50,6 +51,7 @@ export function getServerEnv() {
     SUPABASE_SERVICE_ROLE_KEY: str(process.env.SUPABASE_SERVICE_ROLE_KEY),
     MP_ACCESS_TOKEN: str(process.env.MP_ACCESS_TOKEN),
     MP_WEBHOOK_SECRET: str(process.env.MP_WEBHOOK_SECRET),
+    MP_TEST_PAYER_EMAIL: str(process.env.MP_TEST_PAYER_EMAIL),
     RESEND_API_KEY: str(process.env.RESEND_API_KEY),
     RESEND_FROM_EMAIL: str(process.env.RESEND_FROM_EMAIL),
   });

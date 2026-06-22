@@ -1,7 +1,9 @@
 import { headers } from "next/headers";
 
 import { createMercadoPagoPreference } from "@/application/checkout/mercadopago-checkout";
+import { resolveCheckoutSiteUrl } from "@/application/checkout/site-url";
 import { isMercadoPagoConfigured } from "@/infrastructure/payments/mercadopago-client";
+import { createSupabaseAdminClient } from "@/infrastructure/supabase/admin";
 import { createSupabaseServerClient } from "@/infrastructure/supabase/server";
 import {
   getCurrencyRatesMapCached,
@@ -30,6 +32,15 @@ function generateOrderNumber(): string {
   const ts = Date.now().toString(36).toUpperCase();
   const rnd = Math.random().toString(36).slice(2, 6).toUpperCase();
   return `MKS-${ts}-${rnd}`;
+}
+
+function checkoutErrorMessage(e: unknown): string {
+  if (e instanceof Error && e.message.trim()) return e.message;
+  if (e && typeof e === "object" && "message" in e) {
+    const msg = (e as { message: unknown }).message;
+    if (typeof msg === "string" && msg.trim()) return msg;
+  }
+  return "Error al iniciar el pago.";
 }
 
 export async function createOrderAndPayment(input: {
@@ -73,6 +84,7 @@ export async function createOrderAndPayment(input: {
   }
 
   const supabase = await createSupabaseServerClient();
+  const admin = createSupabaseAdminClient();
   const rates = await getCurrencyRatesMapCached();
   const orderCurrency = market.default_currency.trim();
   const rateSnapshot = rates[orderCurrency];
@@ -168,6 +180,14 @@ export async function createOrderAndPayment(input: {
 
   const total = roundForCurrency(subtotal, currencyMeta);
 
+  if (total <= 0 || orderItems.some((item) => item.unit_price <= 0)) {
+    return {
+      ok: false,
+      error:
+        "El pedido tiene precio $0. Asigna un precio al producto en el panel (Mercados → productos) antes de pagar.",
+    };
+  }
+
   const [{ data: termsDoc }, { data: privacyDoc }] = await Promise.all([
     supabase.from("legal_documents").select("id").eq("type", "terms").eq("is_current", true).maybeSingle(),
     supabase
@@ -190,7 +210,7 @@ export async function createOrderAndPayment(input: {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const { data: acceptance, error: legalErr } = await supabase
+  const { data: acceptance, error: legalErr } = await admin
     .from("legal_acceptances")
     .insert({
       user_id: user?.id ?? null,
@@ -209,7 +229,7 @@ export async function createOrderAndPayment(input: {
 
   const orderNumber = generateOrderNumber();
 
-  const { data: order, error: orderErr } = await supabase
+  const { data: order, error: orderErr } = await admin
     .from("orders")
     .insert({
       order_number: orderNumber,
@@ -240,7 +260,7 @@ export async function createOrderAndPayment(input: {
 
   const orderId = order.id as string;
 
-  const { error: itemsErr } = await supabase.from("order_items").insert(
+  const { error: itemsErr } = await admin.from("order_items").insert(
     orderItems.map((item) => ({
       order_id: orderId,
       product_id: item.product_id,
@@ -258,8 +278,11 @@ export async function createOrderAndPayment(input: {
     return { ok: false, error: itemsErr.message };
   }
 
+  const { siteUrl } = await resolveCheckoutSiteUrl();
+
   try {
     const { initPoint, preferenceId } = await createMercadoPagoPreference({
+      siteUrl,
       orderId,
       orderNumber,
       currency: orderCurrency,
@@ -272,14 +295,14 @@ export async function createOrderAndPayment(input: {
       })),
     });
 
-    await supabase
+    await admin
       .from("orders")
       .update({ payment_external_id: preferenceId, stripe_checkout_session_id: null })
       .eq("id", orderId);
 
     return { ok: true, redirectUrl: initPoint, orderNumber };
   } catch (e) {
-    const message = e instanceof Error ? e.message : "Error al iniciar el pago.";
+    const message = checkoutErrorMessage(e);
     return { ok: false, error: message };
   }
 }
