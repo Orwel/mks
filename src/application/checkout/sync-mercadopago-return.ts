@@ -1,76 +1,27 @@
-import {
-  fulfillPaidOrder,
-  markOrderPaymentFailed,
-} from "@/application/checkout/fulfill-paid-order";
-import {
-  getMercadoPagoPayment,
-  isMercadoPagoConfigured,
-} from "@/infrastructure/payments/mercadopago-client";
+import { processMercadoPagoPayment } from "@/application/checkout/process-mercadopago-payment";
+import { isMercadoPagoConfigured } from "@/infrastructure/payments/mercadopago-client";
 
-async function resolvePayment(
-  orderId: string,
-  paymentId?: string | null,
-): Promise<{ id: string; status?: string; status_detail?: string } | null> {
-  const paymentApi = getMercadoPagoPayment();
-
-  if (paymentId?.trim()) {
-    const payment = await paymentApi.get({ id: paymentId.trim() });
-    return payment?.id
-      ? {
-          id: String(payment.id),
-          status: payment.status,
-          status_detail: payment.status_detail,
-        }
-      : null;
-  }
-
-  const search = await paymentApi.search({
-    options: { external_reference: orderId },
-  });
-  const results = (search as { results?: { id?: number; status?: string; status_detail?: string }[] })
-    .results;
-  const latest = results?.[0];
-  if (!latest?.id) return null;
-  return {
-    id: String(latest.id),
-    status: latest.status,
-    status_detail: latest.status_detail,
-  };
-}
-
-/** Sincroniza estado del pedido al volver de Checkout Pro (sustituto de webhook en localhost). */
+/** Sincroniza estado del pedido al volver de Checkout Pro. */
 export async function syncMercadoPagoOrderFromReturn(input: {
   orderId: string;
   paymentId?: string | null;
   collectionStatus?: string | null;
-}): Promise<{ synced: boolean; mpStatus?: string }> {
+}): Promise<{ synced: boolean; mpStatus?: string; mpStatusDetail?: string }> {
   if (!isMercadoPagoConfigured()) {
     return { synced: false };
   }
 
+  if (!input.paymentId?.trim()) {
+    return { synced: false };
+  }
+
   try {
-    const payment = await resolvePayment(input.orderId, input.paymentId);
-
-    if (!payment?.id) {
-      return { synced: false };
-    }
-
-    const status = payment.status ?? input.collectionStatus ?? undefined;
-
-    if (status === "approved") {
-      await fulfillPaidOrder({
-        orderId: input.orderId,
-        paymentExternalId: payment.id,
-      });
-      return { synced: true, mpStatus: "approved" };
-    }
-
-    if (status === "rejected" || status === "cancelled") {
-      await markOrderPaymentFailed(input.orderId);
-      return { synced: true, mpStatus: status };
-    }
-
-    return { synced: false, mpStatus: status };
+    const result = await processMercadoPagoPayment(input.paymentId);
+    return {
+      synced: result.processed,
+      mpStatus: result.mpStatus ?? input.collectionStatus ?? undefined,
+      mpStatusDetail: result.mpStatusDetail,
+    };
   } catch {
     return { synced: false };
   }

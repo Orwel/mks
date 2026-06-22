@@ -5,11 +5,31 @@ import {
   resolveMercadoPagoInitPoint,
   sandboxPayerEmail,
 } from "@/infrastructure/payments/mercadopago-client";
+import type { ShippingAddress } from "@/shared/types/shipping-address";
 
-function splitPayerName(fullName: string): { name: string; surname?: string } {
+/** Máx. 13 caracteres — aparece en el resumen de tarjeta del comprador. */
+const STATEMENT_DESCRIPTOR = "MYKOREASTORE";
+
+function splitPayerName(fullName: string): { name: string; surname: string } {
   const parts = fullName.trim().split(/\s+/).filter(Boolean);
-  if (parts.length <= 1) return { name: parts[0] ?? "Cliente" };
+  if (parts.length <= 1) {
+    const name = parts[0] ?? "Cliente";
+    return { name, surname: name };
+  }
   return { name: parts[0]!, surname: parts.slice(1).join(" ") };
+}
+
+function buildPayerAddress(shipping: ShippingAddress) {
+  const streetLine = [shipping.street, shipping.apartment, shipping.building]
+    .filter(Boolean)
+    .join(", ")
+    .trim();
+
+  return {
+    zip_code: shipping.postal_code ?? undefined,
+    street_name: streetLine || shipping.city,
+    city: shipping.city || undefined,
+  };
 }
 
 export async function createMercadoPagoPreference(input: {
@@ -18,7 +38,9 @@ export async function createMercadoPagoPreference(input: {
   currency: string;
   customerEmail: string;
   customerName: string;
-  items: { title: string; quantity: number; unitPrice: number }[];
+  customerPhone?: string;
+  shippingAddress: ShippingAddress;
+  items: { title: string; description: string; quantity: number; unitPrice: number }[];
   siteUrl: string;
 }): Promise<{ initPoint: string; preferenceId: string }> {
   const preference = getMercadoPagoPreference();
@@ -31,28 +53,40 @@ export async function createMercadoPagoPreference(input: {
   };
   const localSite = isLocalSiteUrl(siteUrl);
   const sandboxMode = isMercadoPagoSandboxMode(siteUrl);
-  const payerEmail = sandboxMode ? sandboxPayerEmail(input.customerEmail) : input.customerEmail;
+  const payerEmail = sandboxMode ? sandboxPayerEmail(input.customerEmail) : input.customerEmail.trim();
   const payerName = splitPayerName(input.customerName);
+  const phoneDigits = input.customerPhone?.replace(/\D/g, "") ?? "";
 
   const result = await preference.create({
     body: {
       items: input.items.map((item) => ({
         id: item.title.slice(0, 40),
         title: item.title,
+        description: item.description,
         quantity: item.quantity,
         unit_price: item.unitPrice,
         currency_id: input.currency,
       })),
-      ...(sandboxMode
-        ? {}
-        : {
-            payer: {
-              email: payerEmail,
-              name: payerName.name,
-              ...(payerName.surname ? { surname: payerName.surname } : {}),
-            },
-          }),
+      payer: {
+        email: payerEmail,
+        name: payerName.name,
+        surname: payerName.surname,
+        address: buildPayerAddress(input.shippingAddress),
+        ...(phoneDigits.length >= 7
+          ? {
+              phone: {
+                area_code: phoneDigits.length > 10 ? phoneDigits.slice(0, 3) : "",
+                number: phoneDigits.length > 10 ? phoneDigits.slice(3) : phoneDigits,
+              },
+            }
+          : {}),
+      },
       external_reference: input.orderId,
+      statement_descriptor: STATEMENT_DESCRIPTOR,
+      metadata: {
+        order_number: input.orderNumber,
+        order_id: input.orderId,
+      },
       ...(localSite ? {} : { notification_url: `${siteUrl}/api/webhooks/mercadopago` }),
       back_urls: backUrls,
       ...(localSite ? {} : { auto_return: "approved" as const }),

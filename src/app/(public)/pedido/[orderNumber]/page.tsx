@@ -103,8 +103,9 @@ export default async function PedidoPage({ params, searchParams }: Props) {
           </p>
         ) : returningFromMp && !paid ? (
           <p className="font-black text-amber-800">
-            Mercado Pago no registró un pago para este pedido. Si viste error en MP, cierra sesión de tu
-            cuenta real e intenta de nuevo con tarjeta de prueba (APRO) en incógnito.
+            El pago no quedó confirmado en tu pedido. Si Mercado Pago mostró error, revisa que tu cuenta
+            vendedor tenga la dirección fiscal completa en la app de MP e intenta con otra cuenta comprador
+            en incógnito.
           </p>
         ) : (
           <p className="font-black text-neutral-800">

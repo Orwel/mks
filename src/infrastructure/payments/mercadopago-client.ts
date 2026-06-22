@@ -28,19 +28,18 @@ export function isMercadoPagoConfigured(): boolean {
   return Boolean(getServerEnv().MP_ACCESS_TOKEN?.length);
 }
 
-/** Credenciales de prueba del panel → sandbox; producción → init_point normal. */
+/** Sandbox solo en local o con token TEST-; dominio productivo siempre usa init_point real. */
 export function isMercadoPagoSandboxMode(siteUrl: string): boolean {
-  const env = getServerEnv();
-  const token = env.MP_ACCESS_TOKEN ?? "";
+  const token = getServerEnv().MP_ACCESS_TOKEN ?? "";
   if (token.startsWith("TEST-")) return true;
-  // Tokens APP_USR de cuentas de prueba no llevan prefijo TEST-; MP_TEST_PAYER_EMAIL lo indica.
-  if (env.MP_TEST_PAYER_EMAIL?.trim()) return true;
+  if (!isLocalSiteUrl(siteUrl)) return false;
 
   const explicit = process.env.MP_SANDBOX?.trim().toLowerCase();
-  if (explicit === "true" || explicit === "1") return true;
   if (explicit === "false" || explicit === "0") return false;
+  if (explicit === "true" || explicit === "1") return true;
+  if (getServerEnv().MP_TEST_PAYER_EMAIL?.trim()) return true;
 
-  return isLocalSiteUrl(siteUrl);
+  return true;
 }
 
 export function resolveMercadoPagoInitPoint(

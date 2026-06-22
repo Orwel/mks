@@ -288,8 +288,11 @@ export async function createOrderAndPayment(input: {
       currency: orderCurrency,
       customerEmail: input.customerEmail.trim(),
       customerName: input.customerName.trim(),
+      customerPhone: input.customerPhone?.trim(),
+      shippingAddress,
       items: orderItems.map((item) => ({
         title: item.product_name,
+        description: `Pedido ${orderNumber} — ${item.product_name}`.slice(0, 256),
         quantity: item.quantity,
         unitPrice: item.unit_price,
       })),
