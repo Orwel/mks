@@ -2,6 +2,7 @@
 
 import { useTransition } from "react";
 
+import { releaseCartLine } from "@/app/(public)/carrito/actions";
 import { setVisitorMarket } from "@/app/(public)/market/actions";
 import type { MarketRow } from "@/infrastructure/supabase/queries/markets";
 import { cn } from "@/lib/utils";
@@ -22,6 +23,7 @@ export function SiteMarketSelector({
 }: Props) {
   const [pending, startTransition] = useTransition();
   const clearCart = useCartStore((s) => s.clearCart);
+  const lines = useCartStore((s) => s.lines);
   if (markets.length === 0) return null;
 
   const current = markets.find((m) => m.code === currentCode);
@@ -55,7 +57,16 @@ export function SiteMarketSelector({
           startTransition(async () => {
             const r = await setVisitorMarket(code);
             if (r.ok) {
+              // Liberar las reservas del mercado anterior antes de vaciar el
+              // carrito: si sólo se limpia en el navegador, el stock queda
+              // bloqueado en la BD hasta que expire el TTL.
+              const previous = lines;
               clearCart();
+              await Promise.all(
+                previous.map((l) =>
+                  releaseCartLine({ versionId: l.versionId, marketCode: l.marketCode }),
+                ),
+              );
               window.location.reload();
             }
           });

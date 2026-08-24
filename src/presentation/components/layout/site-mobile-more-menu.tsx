@@ -21,6 +21,7 @@ import { createSupabaseBrowserClient } from "@/infrastructure/supabase/client";
 import { cn } from "@/lib/utils";
 import { useSiteMobileNav } from "@/presentation/components/layout/site-mobile-nav-context";
 import { SiteMarketSelector } from "@/presentation/components/layout/site-market-selector";
+import { useHydrated } from "@/presentation/lib/use-hydrated";
 import type { MarketRow } from "@/infrastructure/supabase/queries/markets";
 import { isBrowserSupabaseConfigured } from "@/shared/config/env";
 
@@ -116,12 +117,8 @@ export function SiteMobileMoreMenu({
   showAdminLink = false,
 }: Props) {
   const { menuOpen, closeMenu } = useSiteMobileNav();
-  const [mounted, setMounted] = useState(false);
+  const mounted = useHydrated();
   const [loggedIn, setLoggedIn] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   useEffect(() => {
     if (!isBrowserSupabaseConfigured()) return;

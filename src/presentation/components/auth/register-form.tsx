@@ -4,20 +4,31 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
 
+import { registerCustomer } from "@/app/(auth)/registro/actions";
 import { buttonVariants } from "@/components/ui/button";
-import { createSupabaseBrowserClient } from "@/infrastructure/supabase/client";
 import { cn } from "@/lib/utils";
+import {
+  LegalConsentCheckbox,
+  LegalLink,
+} from "@/presentation/components/auth/legal-consent-checkbox";
 import { MksField, MksInput } from "@/presentation/components/auth/mks-field";
 
 const schema = z
   .object({
     fullName: z.string().min(2, "Escribe al menos 2 caracteres"),
     email: z.string().email("Correo no válido"),
-    password: z.string().min(6, "Mínimo 6 caracteres"),
+    password: z.string().min(8, "Mínimo 8 caracteres"),
     confirm: z.string(),
+    acceptTerms: z.literal(true, {
+      message: "Debes aceptar los Términos y condiciones",
+    }),
+    acceptPrivacy: z.literal(true, {
+      message: "Debes autorizar el tratamiento de tus datos personales",
+    }),
+    marketingOptIn: z.boolean(),
   })
   .refine((d) => d.password === d.confirm, {
     message: "Las contraseñas no coinciden",
@@ -33,6 +44,7 @@ export function RegisterForm() {
 
   const {
     register,
+    control,
     handleSubmit,
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({
@@ -42,38 +54,43 @@ export function RegisterForm() {
       email: "",
       password: "",
       confirm: "",
+      // Nunca premarcadas.
+      acceptTerms: false as unknown as true,
+      acceptPrivacy: false as unknown as true,
+      marketingOptIn: false,
     },
   });
 
   const onSubmit = async (values: FormValues) => {
     setServerError(null);
     setSuccess(null);
-    const supabase = createSupabaseBrowserClient();
-    const { data, error } = await supabase.auth.signUp({
+
+    // El alta corre en el servidor para dejar constancia de la aceptación
+    // (versión del documento, fecha, IP y user agent) en `legal_acceptances`.
+    const result = await registerCustomer({
+      fullName: values.fullName.trim(),
       email: values.email.trim(),
       password: values.password,
-      options: {
-        data: {
-          full_name: values.fullName.trim(),
-        },
-        emailRedirectTo: `${window.location.origin}/login`,
-      },
+      acceptTerms: values.acceptTerms,
+      acceptPrivacy: values.acceptPrivacy,
+      marketingOptIn: values.marketingOptIn,
+      redirectTo: `${window.location.origin}/login`,
     });
 
-    if (error) {
-      setServerError(error.message);
+    if (!result.ok) {
+      setServerError(result.error);
       return;
     }
 
-    if (data.session) {
-      router.push("/mi-cuenta");
-      router.refresh();
+    if (result.needsEmailConfirmation) {
+      setSuccess(
+        "Cuenta creada. Revisa tu correo para confirmarla y luego inicia sesión.",
+      );
       return;
     }
 
-    setSuccess(
-      "Revisa tu correo para confirmar la cuenta (si tu proyecto Supabase tiene confirmación por email activada). Luego puedes iniciar sesión.",
-    );
+    router.push("/mi-cuenta");
+    router.refresh();
   };
 
   return (
@@ -132,6 +149,63 @@ export function RegisterForm() {
           {...register("confirm")}
         />
       </MksField>
+
+      <fieldset className="space-y-3 rounded-xl border-4 border-[var(--mks-ink)] bg-[var(--mks-cream)]/60 p-4">
+        <legend className="px-2 text-xs font-black uppercase tracking-[0.15em] text-[var(--mks-ink)]">
+          Autorizaciones
+        </legend>
+
+        <Controller
+          control={control}
+          name="acceptTerms"
+          render={({ field }) => (
+            <LegalConsentCheckbox
+              id="acceptTerms"
+              checked={!!field.value}
+              onChange={field.onChange}
+              error={errors.acceptTerms?.message}
+            >
+              He leído y acepto los{" "}
+              <LegalLink href="/terminos">Términos y condiciones</LegalLink> de My Korea
+              Store.
+            </LegalConsentCheckbox>
+          )}
+        />
+
+        <Controller
+          control={control}
+          name="acceptPrivacy"
+          render={({ field }) => (
+            <LegalConsentCheckbox
+              id="acceptPrivacy"
+              checked={!!field.value}
+              onChange={field.onChange}
+              error={errors.acceptPrivacy?.message}
+            >
+              Autorizo de manera previa, expresa e informada a IKEBANA CO S.A.S. el
+              tratamiento de mis datos personales conforme a la{" "}
+              <LegalLink href="/privacidad">Política de privacidad</LegalLink>.
+            </LegalConsentCheckbox>
+          )}
+        />
+
+        <Controller
+          control={control}
+          name="marketingOptIn"
+          render={({ field }) => (
+            <LegalConsentCheckbox
+              id="marketingOptIn"
+              checked={!!field.value}
+              onChange={field.onChange}
+            >
+              <span className="text-neutral-600">
+                (Opcional) Quiero recibir novedades y promociones por correo. Puedo
+                revocarlo en cualquier momento.
+              </span>
+            </LegalConsentCheckbox>
+          )}
+        />
+      </fieldset>
 
       <button
         type="submit"

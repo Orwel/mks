@@ -15,7 +15,10 @@ type Props = {
 
 export function HeroBannersCarousel({ banners }: Props) {
   const count = banners.length;
-  const [index, setIndex] = useState(0);
+  const [rawIndex, setIndex] = useState(0);
+  // Derivado, no sincronizado por efecto: si `banners` se acorta, el índice se
+  // acota en el mismo render en vez de provocar un render extra en cascada.
+  const index = count > 0 ? Math.min(rawIndex, count - 1) : 0;
   const [paused, setPaused] = useState(false);
   const [timerEpoch, setTimerEpoch] = useState(0);
 
@@ -38,12 +41,6 @@ export function HeroBannersCarousel({ banners }: Props) {
   const goNext = useCallback(() => {
     goTo(index + 1);
   }, [goTo, index]);
-
-  useEffect(() => {
-    if (index >= count && count > 0) {
-      setIndex(0);
-    }
-  }, [index, count]);
 
   useEffect(() => {
     if (count <= 1 || paused) return undefined;

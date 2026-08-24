@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useActionState, useEffect, useRef, useTransition } from "react";
+import { useActionState, useEffect, useRef, useState, useTransition } from "react";
 
 import {
   deleteVersionImageForm,
@@ -29,7 +29,10 @@ type Props = {
 export function VersionImagesPanel({ marketCode, versionId, images }: Props) {
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const fileInputKey = useRef(0);
+  // Estado, no ref: incrementar un ref no vuelve a renderizar, así que el
+  // `key` del <input type="file"> nunca cambiaba y el archivo ya subido seguía
+  // seleccionado después de subirlo.
+  const [fileInputKey, setFileInputKey] = useState(0);
   const [isDeleting, startDeleteTransition] = useTransition();
   const [, startUploadTransition] = useTransition();
   const boundUpload = uploadVersionImagesForm.bind(null, marketCode);
@@ -37,10 +40,16 @@ export function VersionImagesPanel({ marketCode, versionId, images }: Props) {
 
   const sorted = [...images].sort((a, b) => a.sort_order - b.sort_order);
 
+  const [syncedUploadState, setSyncedUploadState] = useState(uploadState);
+  if (syncedUploadState !== uploadState) {
+    setSyncedUploadState(uploadState);
+    if (uploadState.ok && uploadState.message) {
+      setFileInputKey((k) => k + 1);
+    }
+  }
+
   useEffect(() => {
-    if (!uploadState.message) return;
-    if (uploadState.ok) {
-      fileInputKey.current += 1;
+    if (uploadState.ok && uploadState.message) {
       router.refresh();
     }
   }, [uploadState, router]);
@@ -81,7 +90,7 @@ export function VersionImagesPanel({ marketCode, versionId, images }: Props) {
         <label className="min-w-[10rem] flex-1 text-xs font-black uppercase text-neutral-600">
           Añadir
           <input
-            key={fileInputKey.current}
+            key={fileInputKey}
             ref={fileInputRef}
             name="images"
             type="file"

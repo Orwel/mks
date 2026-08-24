@@ -34,8 +34,10 @@ export function RecoverForm() {
     setServerError(null);
     setSuccess(false);
     const supabase = createSupabaseBrowserClient();
+    // Debe apuntar a /restablecer: si apunta a /login la sesión de recuperación
+    // deja al usuario dentro de la app sin haber cambiado la contraseña.
     const { error } = await supabase.auth.resetPasswordForEmail(values.email.trim(), {
-      redirectTo: `${window.location.origin}/login`,
+      redirectTo: `${window.location.origin}/restablecer`,
     });
 
     if (error) {

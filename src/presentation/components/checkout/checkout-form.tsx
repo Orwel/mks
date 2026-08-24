@@ -132,7 +132,9 @@ export function CheckoutForm({ marketLabel, orderCurrency, marketLocale }: Props
 
       },
 
-      acceptLegal: form.get("accept_legal") === "on",
+      acceptTerms: form.get("accept_terms") === "on",
+
+      acceptPrivacy: form.get("accept_privacy") === "on",
 
     });
 
@@ -446,33 +448,55 @@ export function CheckoutForm({ marketLabel, orderCurrency, marketLocale }: Props
 
 
 
-          <label className="flex items-start gap-2 text-sm font-medium">
+          <fieldset className="space-y-3 rounded-xl border-4 border-[var(--mks-ink)] bg-[var(--mks-cream)]/60 p-4">
 
-            <input name="accept_legal" type="checkbox" required className="mt-1 size-4" />
+            <legend className="px-2 text-xs font-black uppercase tracking-[0.15em] text-[var(--mks-ink)]">
 
-            <span>
+              Autorizaciones
 
-              Acepto los{" "}
+            </legend>
 
-              <Link href="/terminos" className="font-bold text-[var(--mks-pink)] underline" target="_blank">
+            <label className="flex cursor-pointer items-start gap-3 text-sm font-medium leading-relaxed">
 
-                términos
+              <input name="accept_terms" type="checkbox" required className="mt-0.5 size-5 shrink-0 accent-[var(--mks-pink)]" />
 
-              </Link>{" "}
+              <span>
 
-              y la{" "}
+                He leído y acepto los{" "}
 
-              <Link href="/privacidad" className="font-bold text-[var(--mks-pink)] underline" target="_blank">
+                <Link href="/terminos" className="font-black text-[var(--mks-pink)] underline decoration-2 underline-offset-2" target="_blank" rel="noopener noreferrer">
 
-                privacidad
+                  Términos y condiciones
 
-              </Link>
+                </Link>
 
-              .
+                , incluidos el derecho de retracto y la garantía legal.
 
-            </span>
+              </span>
 
-          </label>
+            </label>
+
+            <label className="flex cursor-pointer items-start gap-3 text-sm font-medium leading-relaxed">
+
+              <input name="accept_privacy" type="checkbox" required className="mt-0.5 size-5 shrink-0 accent-[var(--mks-pink)]" />
+
+              <span>
+
+                Autorizo a IKEBANA CO S.A.S. el tratamiento de mis datos personales conforme a la{" "}
+
+                <Link href="/privacidad" className="font-black text-[var(--mks-pink)] underline decoration-2 underline-offset-2" target="_blank" rel="noopener noreferrer">
+
+                  Política de privacidad
+
+                </Link>
+
+                .
+
+              </span>
+
+            </label>
+
+          </fieldset>
 
 
 

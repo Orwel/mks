@@ -1,11 +1,9 @@
+import { createSupabaseAdminClient } from "@/infrastructure/supabase/admin";
 import { createSupabaseServerClient } from "@/infrastructure/supabase/server";
-import { USER_ROLES, type UserRole } from "@/core/value-objects/user-role";
+import { requireAdmin } from "@/infrastructure/supabase/auth-session";
+import type { UserRole } from "@/core/value-objects/user-role";
 import { DashboardPageHeader } from "@/presentation/components/layout/dashboard-page-header";
-
-import { updateProfileRoleForm } from "./actions";
-
-const field =
-  "mt-1 w-full rounded-lg border-2 border-[var(--mks-ink)] bg-white px-2 py-1.5 text-sm font-medium text-[var(--mks-ink)]";
+import { UserRoleRow } from "@/presentation/components/dashboard/user-role-row";
 
 type ProfileRow = {
   id: string;
@@ -15,12 +13,32 @@ type ProfileRow = {
   created_at: string;
 };
 
+/** Correos desde `auth.users`: sólo accesible con service_role. */
+async function loadEmails(): Promise<Map<string, string>> {
+  const map = new Map<string, string>();
+  try {
+    const admin = createSupabaseAdminClient();
+    const { data } = await admin.auth.admin.listUsers({ page: 1, perPage: 200 });
+    for (const u of data?.users ?? []) {
+      if (u.email) map.set(u.id, u.email);
+    }
+  } catch {
+    // Sin SUPABASE_SERVICE_ROLE_KEY el panel sigue funcionando, sin correos.
+  }
+  return map;
+}
+
 export default async function DashboardUsuariosPage() {
+  const session = await requireAdmin();
   const supabase = await createSupabaseServerClient();
-  const { data: profiles, error } = await supabase
-    .from("profiles")
-    .select("id, full_name, role, is_active, created_at")
-    .order("created_at", { ascending: false });
+
+  const [{ data: profiles, error }, emails] = await Promise.all([
+    supabase
+      .from("profiles")
+      .select("id, full_name, role, is_active, created_at")
+      .order("created_at", { ascending: false }),
+    loadEmails(),
+  ]);
 
   const rows = (profiles ?? []) as ProfileRow[];
 
@@ -28,7 +46,7 @@ export default async function DashboardUsuariosPage() {
     <div className="space-y-8">
       <DashboardPageHeader
         title="Usuarios"
-        description="Perfiles y roles. Solo administradores pueden mutar roles (trigger y RLS en Supabase)."
+        description="Perfiles y roles. El cambio de rol se ejecuta en el servidor previa verificación de administrador y queda registrado en la auditoría."
       />
       {error ? <p className="text-sm font-bold text-[var(--mks-pink)]">{error.message}</p> : null}
 
@@ -37,9 +55,7 @@ export default async function DashboardUsuariosPage() {
           <thead className="border-b-4 border-[var(--mks-ink)] bg-[var(--mks-cream)] font-black uppercase tracking-wide text-[var(--mks-ink)]">
             <tr>
               <th className="p-3">Nombre</th>
-              <th className="p-3">Rol</th>
-              <th className="p-3">Activo</th>
-              <th className="p-3">Guardar</th>
+              <th className="p-3">Rol y estado</th>
             </tr>
           </thead>
           <tbody>
@@ -47,29 +63,18 @@ export default async function DashboardUsuariosPage() {
               <tr key={p.id} className="border-b border-neutral-200 align-top">
                 <td className="p-3">
                   <p className="font-bold">{p.full_name || "—"}</p>
+                  {emails.get(p.id) ? (
+                    <p className="text-xs text-neutral-600">{emails.get(p.id)}</p>
+                  ) : null}
                   <p className="mt-1 font-mono text-[0.65rem] text-neutral-500">{p.id}</p>
                 </td>
-                <td className="p-3" colSpan={3}>
-                  <form action={updateProfileRoleForm} className="flex flex-wrap items-end gap-2">
-                    <input type="hidden" name="user_id" value={p.id} />
-                    <label className="text-xs font-bold text-neutral-600">
-                      Rol
-                      <select name="role" defaultValue={p.role} className={field}>
-                        {USER_ROLES.map((r) => (
-                          <option key={r} value={r}>
-                            {r}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                    <button
-                      type="submit"
-                      className="rounded-lg border-4 border-[var(--mks-ink)] bg-[var(--mks-cyan)] px-3 py-1.5 text-xs font-black text-[var(--mks-ink)]"
-                    >
-                      Actualizar rol
-                    </button>
-                  </form>
-                  <p className="mt-2 text-xs text-neutral-500">Cuenta activa: {p.is_active ? "sí" : "no"}</p>
+                <td className="p-3">
+                  <UserRoleRow
+                    userId={p.id}
+                    role={p.role}
+                    isActive={p.is_active}
+                    isSelf={p.id === session.profile.id}
+                  />
                 </td>
               </tr>
             ))}

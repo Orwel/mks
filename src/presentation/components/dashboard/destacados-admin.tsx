@@ -147,12 +147,17 @@ export function DestacadosAdmin({ items }: { items: DestacadoAdminRow[] }) {
   const [selected, setSelected] = useState<DestacadoAdminRow | null>(null);
   const [createState, createAction, createPending] = useActionState(createDestacado, initialFormState);
 
-  useEffect(() => {
+  // Cerrar el modal cuando la acción termina bien. Se resuelve durante el
+  // render comparando la identidad del estado de la acción, en vez de con un
+  // efecto que encadenaba un render adicional con el modal aún visible.
+  const [syncedCreateState, setSyncedCreateState] = useState(createState);
+  if (syncedCreateState !== createState) {
+    setSyncedCreateState(createState);
     if (createState.ok && createState.message && modal === "create") {
       setModal(null);
       setSelected(null);
     }
-  }, [createState, modal]);
+  }
 
   const close = () => {
     setModal(null);

@@ -17,6 +17,7 @@ import {
   type CatalogFiltersState,
   type StockFilter,
 } from "@/presentation/components/catalog/catalog-filter-utils";
+import { useHydrated } from "@/presentation/lib/use-hydrated";
 type Props = {
   categories: CatalogCategory[];
   totalProducts: number;
@@ -32,12 +33,8 @@ export function CatalogBrowseDrawer({ categories, totalProducts }: Props) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [open, setOpen] = useState(false);
-  const [mounted, setMounted] = useState(false);
+  const mounted = useHydrated();
   const [draft, setDraft] = useState<CatalogFiltersState>(defaultCatalogFilters);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   const urlFilters = useMemo(
     () => parseCatalogSearchParams(searchParams),

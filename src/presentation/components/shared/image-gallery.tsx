@@ -68,8 +68,19 @@ export function ImageGallery({
   showThumbnails = true,
   priority = false,
 }: Props) {
-  const [activeIndex, setActiveIndex] = useState(0);
+  const [rawIndex, setActiveIndex] = useState(0);
   const count = images.length;
+
+  // Al cambiar de producto (o de versión) la galería vuelve a la primera foto.
+  // Se ajusta durante el render en lugar de con un efecto, que disparaba un
+  // render en cascada y dejaba un fotograma con la imagen anterior.
+  const [syncedImages, setSyncedImages] = useState(images);
+  if (syncedImages !== images) {
+    setSyncedImages(images);
+    setActiveIndex(0);
+  }
+
+  const activeIndex = count > 0 ? Math.min(rawIndex, count - 1) : 0;
   const active = images[activeIndex];
 
   const goPrev = useCallback(() => {
@@ -79,16 +90,6 @@ export function ImageGallery({
   const goNext = useCallback(() => {
     setActiveIndex((i) => (i >= count - 1 ? 0 : i + 1));
   }, [count]);
-
-  useEffect(() => {
-    setActiveIndex(0);
-  }, [images]);
-
-  useEffect(() => {
-    if (activeIndex >= count && count > 0) {
-      setActiveIndex(0);
-    }
-  }, [activeIndex, count]);
 
   useEffect(() => {
     if (count <= 1) return undefined;

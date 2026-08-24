@@ -1,4 +1,4 @@
-import type { CatalogProduct, MetadataFacet } from "@/infrastructure/supabase/queries/catalog";
+import type { CatalogProduct } from "@/infrastructure/supabase/queries/catalog";
 
 export type CatalogSort =
   | "name_asc"

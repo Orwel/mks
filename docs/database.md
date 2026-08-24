@@ -27,6 +27,10 @@ Orden cronológico en `supabase/migrations/`:
 | `20250605100000_product_versions.sql` | Versiones, stock por mercado, imágenes por versión, vistas y RPC actualizados |
 | `20250605110000_contact_messages.sql` | Formulario `/contactanos` |
 | `20250606100000_seed_mks_categories.sql` | Seed categorías MKS |
+| `20260824100000_profiles_role_guard_maintenance.sql` | Corrige el guard de roles (sesiones `postgres`/`supabase_admin`), auditoría de cambios de rol y RPC `admin_set_user_role` |
+| `20260824100100_promote_angelica_admin.sql` | Data migration idempotente: promueve a admin el perfil indicado |
+| `20260824101000_legal_single_source_of_truth.sql` | `legal_documents.title`/`effective_date`; `legal_acceptances` con `source`, versiones, casillas separadas; vista `legal_acceptances_detailed` |
+| `20260824101100_seed_legal_ikebana_v1.sql` | Publica T&C y Política de privacidad v1.0.0 de IKEBANA CO S.A.S. |
 
 ## Modelo de datos (resumen)
 
@@ -64,7 +68,11 @@ Orden cronológico en `supabase/migrations/`:
 
 ### Legal y operación
 
-- **legal_documents**, **legal_acceptances**.
+- **legal_documents**: fuente única de verdad de los textos legales. Una fila
+  `is_current = true` por tipo (`terms` / `privacy`). Ver ADR 0005.
+- **legal_acceptances**: evidencia *append-only* de cada aceptación (versión
+  exacta, fecha, IP, user agent, `source`). Sin políticas RLS de UPDATE/DELETE.
+- **legal_acceptances_detailed**: vista de consulta para el panel.
 - **contact_messages**: mensajes del formulario público.
 - **webhook_events**: idempotencia Mercado Pago.
 - **audit_log**: auditoría extensible.

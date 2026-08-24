@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useState, useTransition } from "react";
+import { useCallback, useState, useTransition } from "react";
 
 import { reorderByIndex } from "./sortable-reorder";
 
@@ -17,17 +17,20 @@ export function useSortableReorder<T extends ItemWithId>(
   const [dropIndex, setDropIndex] = useState<number | null>(null);
   const [isPending, startTransition] = useTransition();
 
-  useEffect(() => {
-    setItems((current) => {
-      if (
-        current.length === initialItems.length &&
-        current.every((item, i) => item.id === initialItems[i]?.id)
-      ) {
-        return current;
-      }
-      return initialItems;
-    });
-  }, [initialItems]);
+  // Resincronizar con el servidor tras revalidar. Se hace durante el render
+  // (patrón oficial de React para estado derivado de props) en vez de con un
+  // efecto: así la lista nueva se pinta en el mismo render y el panel no se
+  // queda un instante mostrando el orden viejo.
+  const [syncedItems, setSyncedItems] = useState(initialItems);
+  if (syncedItems !== initialItems) {
+    setSyncedItems(initialItems);
+    const sameOrder =
+      items.length === initialItems.length &&
+      items.every((item, i) => item.id === initialItems[i]?.id);
+    if (!sameOrder) {
+      setItems(initialItems);
+    }
+  }
 
   const saveOrder = useCallback(
     (ordered: T[]) => {

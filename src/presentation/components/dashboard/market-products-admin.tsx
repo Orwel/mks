@@ -102,11 +102,14 @@ function SubcategoryPicker({
     return subs[0]?.id ?? "";
   });
 
-  useEffect(() => {
-    const nextSubs = parentId ? subsForParent(categoryTree, parentId) : [];
-    if (nextSubs.some((s) => s.id === subId)) return;
-    setSubId(nextSubs[0]?.id ?? "");
-  }, [parentId, categoryTree, subId]);
+  // Al cambiar la categoría raíz, la subcategoría seleccionada deja de ser
+  // válida. Se corrige durante el render para que el <select> no llegue a
+  // pintarse con un valor que no está entre sus opciones.
+  if (subId && !subs.some((s) => s.id === subId)) {
+    setSubId(subs[0]?.id ?? "");
+  } else if (!subId && subs.length > 0) {
+    setSubId(subs[0].id);
+  }
 
   return (
     <div className="md:col-span-2 grid gap-3 sm:grid-cols-2">
@@ -402,6 +405,12 @@ export function MarketProductsAdmin({
     setSelected(null);
   }, [discardDraft]);
 
+  const openCreate = useCallback(() => {
+    setDraftLoading(true);
+    setDraftError(null);
+    setModal("create");
+  }, []);
+
   const handleCreateSuccess = useCallback(() => {
     draftIdRef.current = null;
     setDraftId(null);
@@ -416,9 +425,10 @@ export function MarketProductsAdmin({
   useEffect(() => {
     if (modal !== "create") return;
 
+    // El estado de carga se fija al abrir el modal (`openCreate`), no aquí:
+    // hacerlo dentro del efecto encadenaba un render extra antes de disparar
+    // la petición.
     let cancelled = false;
-    setDraftLoading(true);
-    setDraftError(null);
 
     void createProductDraft(marketCode).then((result) => {
       if (cancelled) {
@@ -448,7 +458,7 @@ export function MarketProductsAdmin({
         <Link href="/mercados" className={DASHBOARD_BTN_GHOST}>
           ← Volver a mercados
         </Link>
-        <button type="button" onClick={() => setModal("create")} className={DASHBOARD_BTN_PRIMARY}>
+        <button type="button" onClick={openCreate} className={DASHBOARD_BTN_PRIMARY}>
           Nuevo producto
         </button>
       </div>

@@ -5,6 +5,7 @@ import { resolveCheckoutSiteUrl } from "@/application/checkout/site-url";
 import { isMercadoPagoConfigured } from "@/infrastructure/payments/mercadopago-client";
 import { createSupabaseAdminClient } from "@/infrastructure/supabase/admin";
 import { createSupabaseServerClient } from "@/infrastructure/supabase/server";
+import { getCurrentLegalRefs } from "@/infrastructure/supabase/queries/legal";
 import {
   getCurrencyRatesMapCached,
   getMarketByCode,
@@ -49,10 +50,16 @@ export async function createOrderAndPayment(input: {
   customerEmail: string;
   customerPhone?: string;
   shippingAddress: ShippingAddressInput;
-  acceptLegal: boolean;
+  acceptTerms: boolean;
+  acceptPrivacy: boolean;
 }): Promise<CreateCheckoutResult> {
-  if (!input.acceptLegal) {
-    return { ok: false, error: "Debes aceptar términos y privacidad." };
+  // Casillas independientes: la autorización de datos personales no puede ir
+  // refundida en la aceptación del contrato (Ley 1581 de 2012, art. 9).
+  if (!input.acceptTerms) {
+    return { ok: false, error: "Debes aceptar los Términos y condiciones." };
+  }
+  if (!input.acceptPrivacy) {
+    return { ok: false, error: "Debes autorizar el tratamiento de tus datos personales." };
   }
   if (input.lines.length === 0) {
     return { ok: false, error: "El carrito está vacío." };
@@ -188,17 +195,9 @@ export async function createOrderAndPayment(input: {
     };
   }
 
-  const [{ data: termsDoc }, { data: privacyDoc }] = await Promise.all([
-    supabase.from("legal_documents").select("id").eq("type", "terms").eq("is_current", true).maybeSingle(),
-    supabase
-      .from("legal_documents")
-      .select("id")
-      .eq("type", "privacy")
-      .eq("is_current", true)
-      .maybeSingle(),
-  ]);
-
-  if (!termsDoc?.id || !privacyDoc?.id) {
+  // Versión vigente en `legal_documents`: única fuente de verdad del texto.
+  const legal = await getCurrentLegalRefs();
+  if (!legal.terms || !legal.privacy) {
     return { ok: false, error: "Documentos legales no publicados." };
   }
 
@@ -215,8 +214,13 @@ export async function createOrderAndPayment(input: {
     .insert({
       user_id: user?.id ?? null,
       email: input.customerEmail.trim(),
-      terms_document_id: termsDoc.id,
-      privacy_document_id: privacyDoc.id,
+      terms_document_id: legal.terms.id,
+      privacy_document_id: legal.privacy.id,
+      terms_version: legal.terms.version,
+      privacy_version: legal.privacy.version,
+      accepted_terms: true,
+      accepted_privacy: true,
+      source: "checkout",
       ip_address: ip,
       user_agent: userAgent,
     })

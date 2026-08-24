@@ -12,7 +12,8 @@ export async function startCheckout(input: {
   customerEmail: string;
   customerPhone?: string;
   shippingAddress: ShippingAddressInput;
-  acceptLegal: boolean;
+  acceptTerms: boolean;
+  acceptPrivacy: boolean;
 }) {
   return createOrderAndPayment(input);
 }
