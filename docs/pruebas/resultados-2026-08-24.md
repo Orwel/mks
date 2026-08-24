@@ -199,14 +199,49 @@ Migración `20260824110000_fix_reservation_consumption_oversell.sql`:
 
 Estos bloques del plan siguen **pendientes** y requieren credenciales reales:
 
-| Bloque | Motivo |
-| --- | --- |
-| 4, 5, 7 — recorrido por HTTP | La lógica de BD quedó verificada arriba; falta el paso por PostgREST y la interfaz |
-| 6 — Pago real contra Mercado Pago | Requiere credenciales; la confirmación del pedido sí quedó verificada |
-| 8 — Panel de administración por interfaz | Las reglas de RLS y el cambio de rol sí quedaron verificados |
-| 2.6–2.8, 2.10, 2.11 — alta real y escritura de la evidencia | Requiere GoTrue para `signUp` |
-| 3.5–3.7 — ciclo real del correo de recuperación | Requiere el servicio de correo |
-| 10.7 — webhook con firma inválida | Requiere el endpoint desplegado |
+| Bloque | Estado | Motivo |
+| --- | --- | --- |
+| 3.5–3.7 — ciclo del correo de recuperación | ✅ **verificado por el titular** | Redirect URLs configuradas y flujo probado en producción |
+| 6 — Pago real contra Mercado Pago | ✅ **verificado por el titular** | Pago real ejecutado en producción |
+| Despliegue en Vercel | ✅ **verificado por el titular** | Integración con GitHub activa |
+| 4, 5, 7 — recorrido por HTTP | ⚪ pendiente | La lógica de BD quedó verificada arriba; falta el paso por PostgREST y la interfaz |
+| 8 — Panel de administración por interfaz | ⚪ pendiente | Las reglas de RLS y el cambio de rol sí quedaron verificados |
+| 2.6–2.8, 2.10, 2.11 — alta real y escritura de la evidencia | ⚪ pendiente | Requiere GoTrue para `signUp` |
+| 10.7 — webhook con firma inválida | ⚪ pendiente | Requiere el endpoint desplegado |
 
-La lógica de base de datos de esos flujos sí quedó verificada arriba; lo que
-falta es el recorrido de punta a punta con la aplicación desplegada.
+Los bloques marcados en verde los confirmó el titular contra producción. Los
+que siguen en blanco tienen su lógica de base de datos verificada arriba; lo
+que falta en ellos es el recorrido por la interfaz.
+
+---
+
+## Latido para que Supabase no se pause
+
+Los proyectos gratuitos de Supabase se pausan tras varios días sin actividad.
+Se añadió `/api/health` y el workflow `.github/workflows/keep-supabase-alive.yml`.
+
+### Por qué no basta con hacer ping al sitio
+
+Una petición a una página cacheada la responde la CDN de Vercel y **nunca llega
+a Postgres**, así que no cuenta como actividad. `/api/health` está marcado
+`force-dynamic` con `Cache-Control: no-store` y ejecuta una consulta real a
+`markets`, de modo que el latido sí alcanza la base.
+
+### Verificación
+
+| Prueba | Resultado |
+| --- | --- |
+| El endpoint responde `200` con `{"ok":true,"db":"up","markets":4}` | ✅ probado con el cliente `supabase-js` real |
+| Con la base inalcanzable responde `503` y `db:"error"` | ✅ |
+| Cabecera `Cache-Control: no-store, no-cache, must-revalidate` | ✅ |
+| El script del workflow sale con 0 contra un sitio sano | ✅ |
+| Contra una base caída reintenta 5 veces y sale con 1 más `::error::` | ✅ |
+| YAML válido, con `schedule` y `workflow_dispatch` | ✅ |
+
+### Advertencia sobre GitHub Actions
+
+GitHub **deshabilita los workflows programados tras 60 días sin actividad en el
+repositorio**. Mientras haya commits con cierta frecuencia no hay problema; si
+el repositorio queda inactivo varios meses, hay que reactivar el workflow desde
+la pestaña *Actions*. También se puede lanzar a mano en cualquier momento con
+*Run workflow*.

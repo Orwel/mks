@@ -220,6 +220,21 @@ order by type, published_at desc;
 
 ---
 
+## 11. Latido / disponibilidad
+
+| # | Caso | Esperado |
+| --- | --- | --- |
+| 11.1 | `GET /api/health` | `200` con `{"ok":true,"db":"up"}` |
+| 11.2 | Cabeceras | `Cache-Control: no-store` — nunca servido desde caché |
+| 11.3 | Workflow manual | Actions → «Mantener Supabase activo» → *Run workflow* → en verde |
+| 11.4 | Programado | Corre a diario a las 12:00 UTC (07:00 en Colombia) |
+| 11.5 | Base pausada | El workflow falla con `::error::` y avisa en el resumen |
+
+> GitHub deshabilita los workflows programados tras 60 días sin actividad en el
+> repositorio. Si eso ocurre, reactivarlo desde la pestaña *Actions*.
+
+---
+
 ## Cobertura conocida
 
 - **No cubierto por pruebas automatizadas.** El repositorio no tiene aún

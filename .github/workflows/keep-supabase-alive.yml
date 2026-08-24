@@ -1,0 +1,82 @@
+name: Mantener Supabase activo
+
+# Los proyectos gratuitos de Supabase se pausan tras varios días seguidos sin
+# actividad. Este workflow provoca actividad real: llama a /api/health, que
+# consulta Postgres sin caché, así que el latido llega hasta la base de datos y
+# no se queda en la CDN de Vercel.
+#
+# No necesita ningún secreto. Si se quiere apuntar a otro dominio, basta con
+# definir la variable de repositorio SITE_URL
+# (Settings → Secrets and variables → Actions → Variables).
+
+on:
+  schedule:
+    # 12:00 UTC = 07:00 en Colombia. Diario, con margen de sobra frente al
+    # umbral de inactividad de Supabase.
+    - cron: "0 12 * * *"
+  workflow_dispatch: # permite lanzarlo a mano desde la pestaña Actions
+
+concurrency:
+  group: keep-supabase-alive
+  cancel-in-progress: false
+
+jobs:
+  ping:
+    name: Latido a la base de datos
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Llamar a /api/health
+        env:
+          SITE_URL: ${{ vars.SITE_URL || 'https://www.mykoreastore.com' }}
+        run: |
+          set -uo pipefail
+          URL="${SITE_URL%/}/api/health"
+          echo "Latido → $URL"
+
+          # Hasta 5 intentos con espera creciente: un arranque en frío de Vercel
+          # o una pausa momentánea no deben marcar el workflow como fallido.
+          for intento in 1 2 3 4 5; do
+            CODE=$(curl -sS -o /tmp/health.json -w '%{http_code}' \
+                        --max-time 45 \
+                        -H 'Cache-Control: no-cache' \
+                        -H 'User-Agent: mks-keepalive/1.0 (+github-actions)' \
+                        "$URL" || echo "000")
+
+            echo "Intento $intento → HTTP $CODE"
+            cat /tmp/health.json 2>/dev/null || true
+            echo ""
+
+            if [ "$CODE" = "200" ] && grep -q '"db":"up"' /tmp/health.json 2>/dev/null; then
+              echo "✅ La base respondió. Proyecto activo."
+              exit 0
+            fi
+
+            if [ "$intento" -lt 5 ]; then
+              ESPERA=$((intento * 20))
+              echo "Reintentando en ${ESPERA}s…"
+              sleep "$ESPERA"
+            fi
+          done
+
+          echo "::error::La base no respondió tras 5 intentos. Revisa si el proyecto de Supabase está pausado o si el despliegue está caído."
+          exit 1
+
+      - name: Resumen
+        if: always()
+        run: |
+          {
+            echo "### Latido a Supabase"
+            echo ""
+            if [ "${{ job.status }}" = "success" ]; then
+              echo "✅ La base de datos respondió. El proyecto sigue activo."
+            else
+              echo "❌ No hubo respuesta. Revisa el proyecto en Supabase y el despliegue en Vercel."
+            fi
+            echo ""
+            echo "Respuesta:"
+            echo '```json'
+            cat /tmp/health.json 2>/dev/null || echo '(sin respuesta)'
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
