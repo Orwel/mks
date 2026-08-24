@@ -238,6 +238,28 @@ a Postgres**, así que no cuenta como actividad. `/api/health` está marcado
 | Contra una base caída reintenta 5 veces y sale con 1 más `::error::` | ✅ |
 | YAML válido, con `schedule` y `workflow_dispatch` | ✅ |
 
+### Primera corrida real en producción
+
+Lanzada a mano el 24/08/2026 sobre `fba2bcf`
+([run 32782427687](https://github.com/Orwel/mks/actions/runs/32782427687)):
+
+```
+Intento 1 → HTTP 404      (el despliegue aún propagándose en Vercel)
+Intento 2 → HTTP 404
+Intento 3 → HTTP 200
+{"ok":true,"db":"up","markets":3,"ms":1463,"at":"2026-08-24T22:01:02.589Z"}
+✅ La base respondió. Proyecto activo.
+```
+
+Los reintentos justificaron su existencia en el primer intento: absorbieron dos
+404 mientras Vercel terminaba de desplegar. Esta corrida confirma además, desde
+fuera del entorno de desarrollo, que **el despliegue está vivo y Supabase
+responde en producción**.
+
+> **Dato a revisar:** producción reporta **3 mercados activos**, no 4. El plan
+> de pruebas asume CO, MX, PE y EC. Conviene comprobar en el panel
+> (Mercados) cuál está desactivado y si es intencional.
+
 ### Advertencia sobre GitHub Actions
 
 GitHub **deshabilita los workflows programados tras 60 días sin actividad en el
