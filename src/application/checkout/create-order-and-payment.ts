@@ -1,4 +1,4 @@
-import { headers } from "next/headers";
+import { cookies, headers } from "next/headers";
 
 import { createMercadoPagoPreference } from "@/application/checkout/mercadopago-checkout";
 import { resolveCheckoutSiteUrl } from "@/application/checkout/site-url";
@@ -11,6 +11,7 @@ import {
   getMarketByCode,
   getMarketCodeFromCookies,
 } from "@/infrastructure/supabase/queries/markets";
+import { MKS_CART_ID_COOKIE } from "@/shared/constants/cart";
 import { currencyMetaFromRow } from "@/shared/lib/money/currency-meta";
 import { convertAmount, roundForCurrency } from "@/shared/lib/money/convert-amount";
 import {
@@ -209,6 +210,11 @@ export async function createOrderAndPayment(input: {
     data: { user },
   } = await supabase.auth.getUser();
 
+  // El carrito ata el pedido a SUS reservas de stock. Sin esto,
+  // `fulfill_order_payment` consumía también las reservas de otros compradores
+  // y liberaba stock que ya estaba apartado, provocando sobreventa.
+  const cartId = (await cookies()).get(MKS_CART_ID_COOKIE)?.value ?? null;
+
   const { data: acceptance, error: legalErr } = await admin
     .from("legal_acceptances")
     .insert({
@@ -246,6 +252,7 @@ export async function createOrderAndPayment(input: {
       currency: orderCurrency,
       rate_to_cop_snapshot: rateSnapshot,
       market_code: marketCode,
+      cart_id: cartId,
       payment_provider: "mercadopago",
       payment_status: "pending",
       customer_name: input.customerName.trim(),

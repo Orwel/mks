@@ -134,7 +134,9 @@ limit 10;
 | 6.6 | Cancelar en MP | Volver sin pagar | `/checkout?cancelled=1` con aviso; el carrito se conserva |
 | 6.7 | Webhook idempotente | Reenviar la misma notificación | Responde `duplicate: true`; el stock **no** se descuenta dos veces |
 | 6.8 | **Aceptación ligada** | Revisar el pedido | `orders.legal_acceptance_id` apunta a una aceptación con origen **checkout** y las versiones vigentes |
-| 6.9 | Reserva consumida | Tras el pago | `stock_reservations.consumed_at` queda marcado |
+| 6.9 | Reserva consumida | Tras el pago | `stock_reservations.consumed_at` queda marcado **sólo en el carrito del pedido** |
+| 6.10 | **No hay sobreventa** | Dos clientes reservan la misma versión; uno paga | La reserva del otro **sobrevive**; el disponible baja para ambos. Regresión de la migración `20260824110000` |
+| 6.11 | Detector | Forzar un pedido mayor al stock | Aparece `orders.oversell_detected` en `audit_log` |
 
 ### Consulta SQL de verificación
 

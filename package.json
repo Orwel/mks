@@ -9,7 +9,8 @@
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "generate:favicon": "node scripts/generate-brand-favicon.mjs",
-    "verify:mp": "node scripts/verify-mercadopago.mjs"
+    "verify:mp": "node scripts/verify-mercadopago.mjs",
+    "test:money": "esbuild src/shared/lib/money/convert-amount.ts src/shared/lib/money/currency-meta.ts src/shared/types/shipping-address.ts --format=esm --outdir=.money-build --log-level=error && node scripts/test-money.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.4.1",
@@ -37,6 +38,7 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "esbuild": "^0.28.2",
     "eslint": "^9",
     "eslint-config-next": "16.2.6",
     "sharp": "^0.34.5",

@@ -31,6 +31,7 @@ Orden cronológico en `supabase/migrations/`:
 | `20260824100100_promote_angelica_admin.sql` | Data migration idempotente: promueve a admin el perfil indicado |
 | `20260824101000_legal_single_source_of_truth.sql` | `legal_documents.title`/`effective_date`; `legal_acceptances` con `source`, versiones, casillas separadas; vista `legal_acceptances_detailed` |
 | `20260824101100_seed_legal_ikebana_v1.sql` | Publica T&C y Política de privacidad v1.0.0 de IKEBANA CO S.A.S. |
+| `20260824110000_fix_reservation_consumption_oversell.sql` | **Corrige sobreventa**: `orders.cart_id` + `fulfill_order_payment` sólo consume las reservas del pedido pagado; detector `orders.oversell_detected` |
 
 ## Modelo de datos (resumen)
 
@@ -91,7 +92,7 @@ Orden cronológico en `supabase/migrations/`:
 | --- | --- |
 | `reserve_stock(version_id, market_code, quantity, cart_id, user_id?, ttl_minutes?)` | Reserva stock por versión y mercado |
 | `release_stock_reservation(cart_id, version_id, market_code)` | Libera reserva al quitar del carrito |
-| `fulfill_order_payment(order_id)` | Confirma pago: descuenta stock por versión/mercado, consume reservas |
+| `fulfill_order_payment(order_id)` | Confirma pago: descuenta stock por versión/mercado y consume **sólo las reservas del carrito del pedido** (`orders.cart_id`) |
 | `cleanup_expired_stock_reservations()` | Limpia reservas vencidas (cron / Edge Function) |
 
 ## Storage
